@@ -19,32 +19,52 @@ textarea{width:100%;resize:vertical}input[type=range]{padding:0;width:100%}input
 .sc .th{width:100%;height:100%;object-fit:cover;opacity:.7}.sc b{position:absolute;left:4px;bottom:2px;font-size:11px;text-shadow:0 0 4px #000}.sc i{position:absolute;right:4px;top:2px;font-style:normal;font-size:11px}
 #toast{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);background:#000c;padding:8px 14px;border-radius:8px;display:none;max-width:80vw;z-index:9}
 small{color:var(--mu)}#up{position:fixed;right:14px;bottom:16px;z-index:15;display:none;background:var(--ac);color:#111;font-weight:600;border:0;padding:12px 16px;border-radius:24px;box-shadow:0 4px 16px #0008}.ctl{display:flex;gap:10px;align-items:center;width:min(100%,780px);flex-wrap:wrap}.ctl #seek{flex:1;min-width:120px}.big{font-size:15px;padding:10px 20px}.bt{display:inline-block;background:var(--ac);color:#111;font-weight:600;padding:12px 26px;border-radius:8px;text-decoration:none;font-size:16px}#ov{display:none;position:fixed;inset:0;background:#000c;z-index:20;align-items:center;justify-content:center}#ovb{background:var(--p);border:1px solid var(--ln);border-radius:12px;padding:20px;width:min(560px,92vw);text-align:center}#ovb video{width:100%;max-height:48vh;background:#000;border-radius:8px;margin:10px 0}.bar{height:8px;background:var(--p2);border-radius:4px;overflow:hidden;margin:12px 0}.bar i{display:block;height:100%;width:0;background:var(--ac)}
-@media(max-width:900px){body{display:flex;flex-direction:column;height:auto}.C,.B,.L,.R,.top{flex:none}.C{order:0}.B{order:1}.R{order:2}.top{order:3}.L{order:4}.L,.R{max-height:none}.C{height:auto}#cv{max-height:none;width:100%}.B{height:130px}}
+#tabs{display:none}
+@media(max-width:900px){
+html,body{overflow-x:hidden;width:100%}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.L,.R{display:contents}
+.C{order:0;flex:none;padding:6px 8px;gap:6px;height:auto;justify-content:flex-start}
+#cv{max-height:32vh;max-height:32dvh;width:auto;max-width:100%;box-shadow:none}
+.ctl{gap:6px;width:100%}.ctl #seek{flex:1 1 80px;min-width:80px}.ctl .big{padding:8px 12px;font-size:13px}.ctl .x{flex:1 1 40%}
+#tabs{display:flex;order:1;flex:none;background:var(--p);border-top:1px solid var(--ln);border-bottom:1px solid var(--ln)}
+#tabs button{flex:1;border:0;border-radius:0;background:none;padding:11px 0;font-size:13px;color:var(--mu)}#tabs button.on{color:var(--ac);box-shadow:inset 0 -2px var(--ac)}
+.g{display:none;order:3;background:var(--p);padding:10px;overflow-y:auto;overflow-x:hidden;min-height:0;flex:1 1 0;border:0}
+.B.g{order:2;flex:none;max-height:26vh;padding:8px 10px;overflow-x:hidden}
+.top.g{flex:none;flex-wrap:wrap;overflow:visible;white-space:normal;height:auto;padding:10px;gap:6px}
+body[data-tab=m] .g[data-t=m],body[data-tab=v] .g[data-t=v],body[data-tab=s] .g[data-t=s],body[data-tab=p] .g[data-t=p],body[data-tab=o] .g[data-t=o]{display:block}
+body[data-tab=p] .top.g{display:flex}
+#strip{flex-wrap:wrap;height:auto}.sc{width:calc(25% - 5px);height:54px}
+#al{display:grid;grid-template-columns:1fr 1fr;gap:6px}.as{margin:0;background:var(--p2);padding:4px;border-radius:6px;justify-content:space-between}.as span{display:none}.as .th{width:56px;height:40px}
+.row>label{width:76px}input[type=file]{min-width:0;max-width:100%;flex:1;font-size:12px}.row select,.row input[type=range],.row input[type=text],.row input[type=number]{flex:1;min-width:0}
+#pj{width:100%!important}#up{display:none!important}
+}
 </style></head><body>
-<div class="top"><input id="pj" type="text" value="無題プロジェクト" style="width:150px"><button class="pri" onclick="gen($('#md').value)">自動生成</button>
+<div class="top g" data-t="p"><input id="pj" type="text" value="無題プロジェクト" style="width:150px"><button class="pri" onclick="gen($('#md').value)">自動生成</button>
 <select id="md" style="width:auto"><option value="auto">完全おまかせ</option><option value="order">素材の順番を維持</option><option value="script">台本に沿って生成</option><option value="manual">手動編集</option></select>
 <button onclick="gen($('#md').value==='manual'?'auto':$('#md').value)">別パターンを生成</button>
 <button class="pri" onclick="exportV()">MP4書き出し</button><button onclick="cancelExp()" id="cx" style="display:none">キャンセル</button><small id="cap"></small></div>
 
 <div class="L">
-<h4>素材</h4><div class="drop" id="dz" onclick="$('#fi').click()">写真・動画をドロップ／クリック</div><input id="fi" type="file" multiple accept="image/*,video/*,.mov,.mp4,.m4v,.heic" hidden><div id="al"></div>
-<h4>テンプレート</h4><div class="tp" id="tl"></div>
+<div class="g" data-t="m"><h4>素材</h4><div class="drop" id="dz" onclick="$('#fi').click()">写真・動画をドロップ／クリック</div><input id="fi" type="file" multiple accept="image/*,video/*,.mov,.mp4,.m4v,.heic" hidden><div id="al"></div></div>
+<div class="g" data-t="v"><h4>テンプレート</h4><div class="tp" id="tl"></div>
 <h4>エフェクト（全体）</h4>
 <div class="row"><label>映像効果</label><select id="gef"><option value="auto">おまかせ</option><option value="none">なし</option><option value="leak">光漏れ</option><option value="grain">フィルムグレイン</option><option value="shine">光の反射</option><option value="flash">フラッシュ</option><option value="glow">ソフトグロー</option><option value="vig">周辺を暗く</option><option value="warm">暖色</option></select></div>
 <div class="row"><label>カメラ</label><select id="gcm"><option value="auto">おまかせ</option><option value="none">固定</option><option value="zin">ゆっくりズームイン</option><option value="zout">ゆっくりズームアウト</option><option value="pl">左へ移動</option><option value="pr">右へ移動</option><option value="pu">上へ移動</option></select></div>
-<small>選ぶと全シーンに反映します。シーンごとの変更は右の設定で。</small>
-<h4>商品情報</h4>
+<small>選ぶと全シーンに反映します。シーンごとの変更は「シーン」で。</small></div>
+<div class="g" data-t="p"><h4>商品情報</h4>
 <input id="pn" type="text" placeholder="商品名"><div style="height:4px"></div><input id="pc" type="text" placeholder="キャッチコピー"><div style="height:4px"></div><input id="pe" type="text" placeholder="英語キャッチ（任意）例: Light Up Your Camp"><label><input type="checkbox" id="ae" checked> 英字を自動で入れる</label>
 <div style="height:4px"></div><textarea id="pf" rows="3" placeholder="商品の特徴（1行1項目。入力した内容だけが字幕になります）"></textarea>
 <textarea id="pt" rows="1" placeholder="ターゲット層（任意）"></textarea><textarea id="ps" rows="3" placeholder="台本（1行＝1シーン。台本モード用）"></textarea>
 <button onclick="suggest()" style="margin-top:4px">字幕を自動提案</button>
-<h4>保存</h4><small>素材と編集内容は、この端末のブラウザに自動保存されます。</small><div style="margin-top:6px"><button onclick="resetAll()">保存内容をすべて消す</button></div>
+<h4>保存</h4><small>素材と編集内容は、この端末のブラウザに自動保存されます。</small><div style="margin-top:6px"><button onclick="resetAll()">保存内容をすべて消す</button></div></div>
 </div>
 
-<div class="C"><canvas id="cv" width="1920" height="1080"></canvas><div class="ctl"><button id="pb" class="pri big" onclick="togglePlay()">▶ 再生</button><input id="seek" type="range" min="0" max="1000" value="0"><span id="tm">0:00</span><button class="big" onclick="gen($('#md').value=='manual'?'auto':$('#md').value)">再作成（更新）</button><button class="big" onclick="exportV()">動画を書き出す</button></div><small id="st"></small></div>
+<div class="C"><canvas id="cv" width="1920" height="1080"></canvas><div class="ctl"><button id="pb" class="pri big" onclick="togglePlay()">▶ 再生</button><input id="seek" type="range" min="0" max="1000" value="0"><span id="tm">0:00</span><button class="big x" onclick="gen($('#md').value=='manual'?'auto':$('#md').value)">再作成（更新）</button><button class="big x" onclick="exportV()">動画を書き出す</button></div><small id="st"></small></div>
 
-<div class="R"><h4>選択シーン</h4><div id="pn2"><small>下のシーンを選択してください</small></div>
-<h4>動画設定</h4>
+<div id="tabs"><button data-k="m" onclick="tab('m')">素材</button><button data-k="v" onclick="tab('v')">見た目</button><button data-k="s" onclick="tab('s')">シーン</button><button data-k="p" onclick="tab('p')">作成</button><button data-k="o" onclick="tab('o')">設定</button></div>
+<div class="R"><div class="g" data-t="s"><h4>選択シーン</h4><div id="pn2"><small>シーンを選択してください</small></div></div>
+<div class="g" data-t="o"><h4>動画設定</h4>
 <div class="row"><label>サイズ</label><select id="ar" onchange="size()"><option>16:9</option><option>9:16</option><option>1:1</option><option>4:5</option></select></div>
 <div class="row"><label>画質</label><select id="rs" onchange="size()"><option value="1080">1080p</option><option value="720">720p</option></select></div>
 <div class="row"><label>長さ(秒)</label><select id="du" onchange="$('#dur').style.display=this.value=='x'?'':'none'"><option>15</option><option>30</option><option>45</option><option selected>60</option><option>90</option><option value="x">自由</option></select><input id="dur" type="number" min="5" max="300" value="60" style="display:none;width:60px"></div>
@@ -61,10 +81,10 @@ small{color:var(--mu)}#up{position:fixed;right:14px;bottom:16px;z-index:15;displ
 
 
 <div class="row"><label>元動画音声</label><input id="vo" type="range" min="0" max="1" step=".05" value="0" oninput="vg()"></div>
-<small>BGMは自動でループ・最後2秒でフェードアウトします。</small>
+<small>BGMは自動でループし、最後の2秒でフェードアウトします。</small></div>
 </div>
 
-<div class="B"><div id="strip"></div></div><div id="toast"></div><button id="up" onclick="scrollTo({top:0,behavior:'smooth'})">↑ 再生画面へ戻る</button><div id="ov"><div id="ovb"></div></div>
+<div class="B g" data-t="s"><div id="strip"></div></div><div id="toast"></div><button id="up" onclick="toTop()">↑ 再生画面へ戻る</button><div id="ov"><div id="ovb"></div></div>
 
 <script>
 const $=s=>document.querySelector(s),clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
@@ -132,7 +152,7 @@ function rStrip(){const e=$('#strip');e.innerHTML=S.map((s,i)=>{const a=assets.f
 e.querySelectorAll('.sc').forEach(el=>{const i=+el.dataset.i;el.onclick=()=>{sel=i;rStrip();rPanel();t=starts()[i];render(t)};el.ondragstart=()=>dragI=i;el.ondragover=e=>e.preventDefault();el.ondrop=()=>{if(dragI<0||dragI==i)return;const[m]=S.splice(dragI,1);S.splice(i,0,m);sel=i;dragI=-1;rStrip();rPanel();render(t)}})}
 const OPT={fx:{zin:'ズームイン',zout:'ズームアウト',pl:'左へ移動',pr:'右へ移動',pu:'上へ移動',none:'固定'},tr:{cut:'カット',fade:'フェード',dissolve:'クロスディゾルブ',blur:'ブラー→鮮明',wipe:'マスク',slide:'スライド'},an:{fade:'フェード',slide:'スライド',type:'タイプライター',mask:'マスク',zoom:'ズーム',split:'1行ずつせり上がり',letters:'1文字ずつ浮かぶ',blurin:'ぼかしから鮮明に',track:'文字間が縮む'},al:{c:'中央',l:'左',r:'右'},vt:{h:'横書き',v:'縦書き'},ef:{none:'なし',leak:'光漏れ',grain:'フィルムグレイン',shine:'光の反射',flash:'フラッシュ',glow:'ソフトグロー',vig:'周辺を暗く',warm:'暖色'},pos:{.15:'上',.5:'中央',.82:'下'}};
 const FD=[['txt','テロップ','area'],['en','英字（サブ）','text'],['d','表示秒','num',.5,30,.1],['fx','カメラ','sel'],['zm','拡大率','rng',1,2.5,.05],['ef','映像エフェクト','sel'],['es','エフェクト強さ','rng',0,1.5,.05],['tr','切替','sel'],['an','文字演出','sel'],['vt','書字方向','sel'],['al','文字そろえ','sel'],['ln','アクセント線','chk'],['pos','文字位置','rng',.08,.95,.01],['sz','文字サイズ','rng',.6,2,.05],['col','文字色','col'],['band','背景帯','chk'],['br','明るさ','rng',.5,1.5,.05],['co','コントラスト','rng',.5,1.5,.05],['sa','彩度','rng',0,2,.05],['fit','全体表示(切らない)','chk'],['vs','動画開始秒','num',0,600,.1],['sp','再生速度','rng',.25,3,.05],['lock','固定（再生成しない）','chk']];
-function rPanel(){const s=S[sel],e=$('#pn2');if(!s){e.innerHTML='<small>下のシーンを選択してください</small>';return}
+function rPanel(){const s=S[sel],e=$('#pn2');if(!s){e.innerHTML='<small>上のシーンを選んでください</small>';return}
 e.innerHTML=FD.map(([k,l,ty,a,b,st])=>{let c='';if(ty=='area')c=`<textarea rows="2" data-k="${k}">${s[k]||''}</textarea>`;else if(ty=='num')c=`<input type="number" data-k="${k}" min="${a}" max="${b}" step="${st}" value="${s[k]}">`;else if(ty=='rng')c=`<input type="range" data-k="${k}" min="${a}" max="${b}" step="${st}" value="${s[k]}">`;else if(ty=='text')c=`<input type="text" data-k="${k}" value="${s[k]||''}">`;else if(ty=='col')c=`<input type="color" data-k="${k}" value="${s[k]}">`;else if(ty=='chk')c=`<input type="checkbox" data-k="${k}" ${s[k]?'checked':''}>`;else c=`<select data-k="${k}">${Object.entries(OPT[k]).map(([v,n])=>`<option value="${v}" ${s[k]==v?'selected':''}>${n}</option>`).join('')}</select>`;return`<div class="row"><label>${l}</label>${c}</div>`}).join('')+`<div class="row"><label>素材差替</label><select id="rp">${assets.map(a=>`<option value="${a.id}" ${a.id==s.a?'selected':''}>${a.name}</option>`).join('')}</select></div><div class="row"><button onclick="short1()">短いコピーに変換</button><button onclick="dup()">複製</button><button onclick="applyAll()">演出を全シーンへ</button><button onclick="del()">削除</button></div>`;
 e.querySelectorAll('[data-k]').forEach(i=>{i.oninput=()=>{const k=i.dataset.k;s[k]=i.type=='checkbox'?i.checked:i.type=='range'||i.type=='number'?+i.value:i.value;if(k=='d'||k=='lock')rStrip();render(t)}});$('#rp').onchange=e=>{s.a=+e.target.value;rStrip();render(t)}}
 const applyG=()=>{const g=$('#gef').value,c=$('#gcm').value;S.forEach(x=>{if(x.lock)return;if(g!='auto')x.ef=g;if(c!='auto')x.fx=c});rPanel();render(t)},applyAll=()=>{const s=S[sel];S.forEach(x=>{if(!x.lock)Object.assign(x,{an:s.an,al:s.al,ln:s.ln,ef:s.ef,es:s.es,tr:s.tr,fx:s.fx})});rStrip();render(t);toast('選択中の演出を全シーンに適用しました')},short1=()=>{S[sel].txt=short(S[sel].txt,14);rPanel();render(t)},dup=()=>{S.splice(sel+1,0,{...S[sel]});sel++;rStrip();rPanel()},del=()=>{S.splice(sel,1);sel=-1;rStrip();rPanel();render(t)};
@@ -242,7 +262,9 @@ const lf=await dbGet('f','logo');if(lf){const i=new Image();i.onload=()=>{logoIm
 size();rAssets();rStrip();rPanel();render(0);if(assets.length)toast('前回の続きを開きました');quota()}catch(e){}
 ready=true;lastSave=snap()}
 async function resetAll(){if(!confirm('保存した素材と編集内容をすべて消します。よろしいですか？'))return;ready=false;try{(await dbp()).close()}catch(e){}indexedDB.deleteDatabase('vm').onsuccess=()=>location.reload();setTimeout(()=>location.reload(),1500)}
+function tab(k){document.body.dataset.tab=k;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k==k))}
+function toTop(){window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0}
 /* ---------- init ---------- */
 (()=>{const m=window.MediaRecorder?(['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4'].some(x=>MediaRecorder.isTypeSupported(x))?'MP4(H.264/AAC)書き出し対応':'このブラウザはWebM書き出しのみ'):'書き出し非対応ブラウザ';$('#cap').textContent=m})();
-$('#gef').onchange=$('#gcm').onchange=applyG;addEventListener('scroll',()=>{$('#up').style.display=scrollY>500?'block':'none'});window.onerror=m=>toast('エラー：'+m);window.onunhandledrejection=e=>toast('エラー：'+(e.reason&&e.reason.message||e.reason));pick('LUXURY');size();render(0);restore();
+$('#gef').onchange=$('#gcm').onchange=applyG;addEventListener('scroll',()=>{$('#up').style.display=scrollY>500?'block':'none'});window.onerror=m=>toast('エラー：'+m);window.onunhandledrejection=e=>toast('エラー：'+(e.reason&&e.reason.message||e.reason));tab('m');pick('LUXURY');size();render(0);restore();
 </script></body></html>
