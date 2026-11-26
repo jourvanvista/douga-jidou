@@ -1,0 +1,182 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>動画メーカー</title>
+<style>
+:root{--bg:#161616;--p:#202020;--p2:#2b2b2b;--ln:#383838;--tx:#eee;--mu:#9a9a9a;--ac:#c9a96a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:13px/1.5 system-ui,"Hiragino Sans","Yu Gothic",sans-serif;height:100vh;display:grid;grid-template-rows:48px 1fr 118px;grid-template-columns:270px 1fr 300px;grid-template-areas:"t t t""l c r""b b b"}
+.top{grid-area:t;display:flex;gap:8px;align-items:center;padding:0 12px;background:var(--p);border-bottom:1px solid var(--ln);overflow-x:auto;white-space:nowrap}
+.L{grid-area:l}.R{grid-area:r}.L,.R{background:var(--p);overflow:auto;padding:10px}.L{border-right:1px solid var(--ln)}.R{border-left:1px solid var(--ln)}
+.C{grid-area:c;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;min-width:0;min-height:0;gap:8px}
+#cv{max-width:100%;max-height:calc(100% - 40px);background:#000;box-shadow:0 8px 40px #0008}
+.B{grid-area:b;background:var(--p);border-top:1px solid var(--ln);padding:8px 10px;overflow-x:auto;position:relative}
+h4{margin:14px 0 6px;font-size:12px;color:var(--ac);letter-spacing:.08em}h4:first-child{margin-top:0}
+button,select,input,textarea{font:inherit;color:var(--tx);background:var(--p2);border:1px solid var(--ln);border-radius:6px;padding:5px 8px}
+button{cursor:pointer}button:hover{border-color:var(--ac)}button.pri{background:var(--ac);color:#111;border-color:var(--ac);font-weight:600}
+textarea{width:100%;resize:vertical}input[type=range]{padding:0;width:100%}input[type=color]{padding:0;height:26px;width:44px}input[type=text],input[type=number]{width:100%}
+.row{display:flex;gap:6px;align-items:center;margin:4px 0}.row>label{width:84px;color:var(--mu);flex:none;font-size:12px}
+.drop{border:1px dashed var(--ln);border-radius:8px;padding:14px;text-align:center;color:var(--mu);cursor:pointer}.drop.on{border-color:var(--ac)}
+.as{display:flex;gap:6px;align-items:center;margin:4px 0;font-size:12px}.as .th{width:46px;height:34px;object-fit:cover;border-radius:4px;background:#000;flex:none}.as span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.as button{padding:1px 6px}
+.tp{display:grid;grid-template-columns:1fr 1fr;gap:5px}.tp button.on{background:var(--ac);color:#111}
+#strip{display:flex;gap:6px;height:76px}.sc{width:112px;flex:none;position:relative;border:2px solid var(--ln);border-radius:6px;overflow:hidden;cursor:pointer;background:#000}.sc.sel{border-color:var(--ac)}.sc.cur{box-shadow:0 0 0 2px #fff6}
+.sc .th{width:100%;height:100%;object-fit:cover;opacity:.7}.sc b{position:absolute;left:4px;bottom:2px;font-size:11px;text-shadow:0 0 4px #000}.sc i{position:absolute;right:4px;top:2px;font-style:normal;font-size:11px}
+#toast{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);background:#000c;padding:8px 14px;border-radius:8px;display:none;max-width:80vw;z-index:9}
+small{color:var(--mu)}
+@media(max-width:900px){body{display:block;height:auto}.L,.R{max-height:none}.C{height:auto}#cv{max-height:none;width:100%}.B{height:130px}}
+</style></head><body>
+<div class="top"><input id="pj" type="text" value="無題プロジェクト" style="width:150px"><button class="pri" onclick="gen($('#md').value)">自動生成</button>
+<select id="md" style="width:auto"><option value="auto">完全おまかせ</option><option value="order">素材の順番を維持</option><option value="script">台本に沿って生成</option><option value="manual">手動編集</option></select>
+<button onclick="gen($('#md').value==='manual'?'auto':$('#md').value)">別パターンを生成</button>
+<button onclick="togglePlay()" id="pb">▶ 再生</button><input id="seek" type="range" min="0" max="1000" value="0" style="width:160px"><span id="tm">0:00</span>
+<button class="pri" onclick="exportV()">MP4書き出し</button><button onclick="cancelExp()" id="cx" style="display:none">キャンセル</button><small id="cap"></small></div>
+
+<div class="L">
+<h4>素材</h4><div class="drop" id="dz" onclick="$('#fi').click()">写真・動画をドロップ／クリック</div><input id="fi" type="file" multiple accept="image/*,video/*" hidden><div id="al"></div>
+<h4>テンプレート</h4><div class="tp" id="tl"></div>
+<h4>商品情報</h4>
+<input id="pn" type="text" placeholder="商品名"><div style="height:4px"></div><input id="pc" type="text" placeholder="キャッチコピー">
+<div style="height:4px"></div><textarea id="pf" rows="3" placeholder="商品の特徴（1行1項目。入力した内容だけが字幕になります）"></textarea>
+<textarea id="pt" rows="1" placeholder="ターゲット層（任意）"></textarea><textarea id="ps" rows="3" placeholder="台本（1行＝1シーン。台本モード用）"></textarea>
+<button onclick="suggest()" style="margin-top:4px">字幕を自動提案</button>
+</div>
+
+<div class="C"><canvas id="cv" width="1920" height="1080"></canvas><small id="st"></small></div>
+
+<div class="R"><h4>選択シーン</h4><div id="pn2"><small>下のシーンを選択してください</small></div>
+<h4>動画設定</h4>
+<div class="row"><label>サイズ</label><select id="ar" onchange="size()"><option>16:9</option><option>9:16</option><option>1:1</option><option>4:5</option></select></div>
+<div class="row"><label>画質</label><select id="rs" onchange="size()"><option value="1080">1080p</option><option value="720">720p</option></select></div>
+<div class="row"><label>長さ(秒)</label><select id="du" onchange="$('#dur').style.display=this.value=='x'?'':'none'"><option>15</option><option>30</option><option>45</option><option selected>60</option><option>90</option><option value="x">自由</option></select><input id="dur" type="number" min="5" max="300" value="60" style="display:none;width:60px"></div>
+<h4>ブランド</h4>
+<div class="row"><label>ブランド名</label><input id="bn" type="text" value="JourVanVista" oninput="render(t)"></div>
+<div class="row"><label>メインカラー</label><input id="bc" type="color" value="#c9a96a" oninput="render(t)"></div>
+<div class="row"><label>ロゴ</label><input id="lg" type="file" accept="image/*"></div>
+<div class="row"><label>ロゴ表示</label><input id="lo" type="checkbox" checked onchange="render(t)"></div>
+<h4>音</h4>
+<div class="row"><label>BGM</label><input id="bf" type="file" accept="audio/*"></div>
+<div class="row"><label>BGM音量</label><input id="bv" type="range" min="0" max="1" step=".05" value=".6"></div>
+<div class="row"><label>開始位置(秒)</label><input id="bs" type="number" min="0" value="0"></div>
+<div class="row"><label>効果音</label><input id="sf" type="file" accept="audio/*"></div>
+<div class="row"><label>効果音音量</label><input id="sv" type="range" min="0" max="1" step=".05" value=".8"></div>
+<div class="row"><label>SE自動配置</label><input id="as" type="checkbox" checked></div>
+<div class="row"><label>元動画音声</label><input id="vo" type="range" min="0" max="1" step=".05" value="0" oninput="vg()"></div>
+<small>BGMは自動でループ・最後2秒でフェードアウトします。</small>
+</div>
+
+<div class="B"><div id="strip"></div></div><div id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s),clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const T={
+LUXURY:{font:'"Hiragino Mincho ProN","Yu Mincho",serif',w:400,col:'#f3e7cc',band:0,pace:5,tr:'dissolve',trd:1.2,fx:['zin','pl','zout'],an:'fade',pos:.82,ls:.14,vg:.55,lb:0,gr:[.9,1.1,.85]},
+MINIMAL:{font:'"Helvetica Neue","Hiragino Sans",sans-serif',w:300,col:'#ffffff',band:0,pace:4.5,tr:'fade',trd:1,fx:['zin','zout','none'],an:'fade',pos:.5,ls:.08,vg:0,lb:0,gr:[1.05,.95,.85]},
+CINEMATIC:{font:'Georgia,"Hiragino Mincho ProN",serif',w:700,col:'#e9e4d6',band:0,pace:5,tr:'blur',trd:1.3,fx:['zin','pr','zout'],an:'mask',pos:.86,ls:.2,up:1,vg:.7,lb:.11,gr:[.85,1.2,.8]},
+OUTDOOR:{font:'"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif',w:800,col:'#ffffff',band:1,pace:3.5,tr:'wipe',trd:.7,fx:['pl','zin','pr'],an:'slide',pos:.84,ls:.03,vg:.25,lb:0,gr:[1,1.15,1.1]},
+TECHNOLOGY:{font:'"SF Mono",Consolas,"Hiragino Sans",monospace',w:600,col:'#9fe8ff',band:1,pace:3.5,tr:'wipe',trd:.6,fx:['zin','pu','zout'],an:'type',pos:.8,ls:.05,vg:.3,lb:0,gr:[.95,1.2,.8]},
+'JAPANESE MODERN':{font:'"Hiragino Mincho ProN","Yu Mincho",serif',w:500,col:'#f1ede4',band:0,pace:5,tr:'fade',trd:1.2,fx:['zin','pu','none'],an:'mask',pos:.5,ls:.18,vg:.35,lb:0,gr:[.95,1,.75]},
+LIFESTYLE:{font:'"Hiragino Maru Gothic ProN","Yu Gothic",sans-serif',w:600,col:'#ffffff',band:1,pace:4,tr:'dissolve',trd:.9,fx:['zin','pl','pr'],an:'fade',pos:.84,ls:.04,vg:.1,lb:0,gr:[1.05,1,1.1]},
+DYNAMIC:{font:'Impact,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif',w:900,col:'#ffffff',band:0,pace:2,tr:'slide',trd:.35,fx:['zin','pl','pr','zout'],an:'zoom',pos:.5,ls:.02,vg:.2,lb:0,gr:[1.05,1.25,1.15],fs:1.25}};
+let tpl='LUXURY',assets=[],S=[],sel=-1,playing=false,t=0,AC,master,mon,dest,bgm=null,se=null,tStart=0,raf,srcs=[],rec=null,exp=false,cancelled=false,onEnd=null,stopAt=null,W=1920,H=1080,logoImg=null,uid=1;
+const cv=$('#cv'),cx=cv.getContext('2d');
+function toast(m){const e=$('#toast');e.textContent=m;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.display='none',4500)}
+function size(){const[a,b]={'16:9':[16,9],'9:16':[9,16],'1:1':[1,1],'4:5':[4,5]}[$('#ar').value],s=+$('#rs').value;if(a>=b){H=s;W=Math.round(s*a/b)}else{W=s;H=Math.round(s*b/a)}cv.width=W;cv.height=H;render(t)}
+const total=()=>S.reduce((a,x)=>a+x.d,0),durSel=()=>$('#du').value=='x'?+$('#dur').value||60:+$('#du').value;
+function at(t){let s=0;for(let i=0;i<S.length;i++){if(t<s+S[i].d||i==S.length-1)return[i,t-s];s+=S[i].d}return[0,0]}
+const starts=()=>{let s=0;return S.map(x=>{const r=s;s+=x.d;return r})};
+/* ---------- audio ---------- */
+function ensure(){if(AC)return;AC=new AudioContext();master=AC.createGain();dest=AC.createMediaStreamDestination();mon=AC.createGain();master.connect(dest);master.connect(mon);mon.connect(AC.destination)}
+function vg(){assets.forEach(a=>a.g&&(a.g.gain.value=+$('#vo').value))}
+async function loadAudio(f,k){if(!f)return;ensure();try{const b=await AC.decodeAudioData(await f.arrayBuffer());k=='bgm'?bgm=b:se=b;toast(f.name+' を読み込みました')}catch(e){toast('音声を読み込めません（'+f.name+'）。MP3/WAV/M4Aをお試しください')}}
+$('#bf').onchange=e=>loadAudio(e.target.files[0],'bgm');$('#sf').onchange=e=>loadAudio(e.target.files[0],'se');
+function stopAudio(){srcs.forEach(s=>{try{s.stop()}catch(e){}});srcs=[]}
+function startAudio(from){stopAudio();const now=AC.currentTime,T0=now-from,tot=total();
+if(bgm){const s=AC.createBufferSource(),g=AC.createGain(),v=+$('#bv').value;s.buffer=bgm;s.loop=true;g.gain.setValueAtTime(from<.01?0:v,now);if(from<.01)g.gain.linearRampToValueAtTime(v,now+1);g.gain.setValueAtTime(v,Math.max(now,T0+tot-2));g.gain.linearRampToValueAtTime(0,T0+tot);s.connect(g);g.connect(master);s.start(now,((+$('#bs').value||0)+from)%bgm.duration);srcs.push(s)}
+if(se&&$('#as').checked)starts().forEach(st=>{if(st>=from-.01){const s=AC.createBufferSource(),g=AC.createGain();s.buffer=se;g.gain.value=+$('#sv').value;s.connect(g);g.connect(master);s.start(T0+st+.02);srcs.push(s)}})}
+/* ---------- assets ---------- */
+async function addFiles(fs){ensure();for(const f of fs){const v=f.type.startsWith('video'),im=f.type.startsWith('image');if(!v&&!im){toast(f.name+'：未対応の形式です（JPG/PNG/WebP/MP4など）');continue}
+const url=URL.createObjectURL(f),el=v?document.createElement('video'):new Image();
+try{await new Promise((ok,ng)=>{el.onerror=()=>ng();if(v){el.preload='auto';el.playsInline=true;el.onloadeddata=ok;el.src=url}else{el.onload=ok;el.src=url}})}catch(e){toast('「'+f.name+'」はこのブラウザで読み込めません'+(/mov|hevc/i.test(f.name)?'（MOVはHEVC形式の場合、Chrome/Safari以外では不可。MP4への変換が必要です）':''));continue}
+const a={id:uid++,v,el,url,name:f.name,use:true};if(v){const m=AC.createMediaElementSource(el),g=AC.createGain();g.gain.value=+$('#vo').value;m.connect(g);g.connect(master);a.g=g}assets.push(a)}
+rAssets();if(!S.length)gen('auto')}
+$('#fi').onchange=e=>addFiles([...e.target.files]);
+const dz=$('#dz');dz.ondragover=e=>{e.preventDefault();dz.classList.add('on')};dz.ondragleave=()=>dz.classList.remove('on');dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');addFiles([...e.dataTransfer.files])};
+$('#lg').onchange=e=>{const f=e.target.files[0];if(!f)return;const i=new Image();i.onload=()=>{logoImg=i;render(t)};i.src=URL.createObjectURL(f)};
+const thumb=(a,c='th')=>a.v?`<video class="${c}" src="${a.url}#t=.5" muted></video>`:`<img class="${c}" src="${a.url}">`;
+function rAssets(){$('#al').innerHTML=assets.map((a,i)=>`<div class="as">${thumb(a)}<span title="${a.name}">${a.name}</span><input type="checkbox" ${a.use?'checked':''} onchange="assets[${i}].use=this.checked" title="自動生成に使用"><button onclick="addScene(${a.id})" title="シーンに追加">＋</button><button onclick="delAsset(${i})">×</button></div>`).join('')||'<small>素材がありません</small>'}
+function delAsset(i){const id=assets[i].id;assets.splice(i,1);S=S.filter(s=>s.a!=id);sel=-1;rAssets();rStrip();rPanel();render(t)}
+/* ---------- templates / compose ---------- */
+const LBL={LUXURY:['高級感','重厚で洗練された演出'],MINIMAL:['シンプル','余白を生かした静かな演出'],CINEMATIC:['映画風','予告編のようなドラマチックな演出'],OUTDOOR:['アウトドア','キャンプ・アウトドア用品向け'],TECHNOLOGY:['先進的','革新的な商品向け'],'JAPANESE MODERN':['和モダン','落ち着いた和の演出'],LIFESTYLE:['暮らし','日常を豊かにする商品向け'],DYNAMIC:['迫力','テンポが速くインパクトのある演出']};
+$('#tl').innerHTML=Object.keys(T).map(k=>`<button data-k="${k}" title="${LBL[k][1]}" onclick="pick('${k}')">${LBL[k][0]}</button>`).join('');
+function pick(k){tpl=k;document.querySelectorAll('#tl button').forEach(b=>b.classList.toggle('on',b.dataset.k==k));if(S.length&&$('#md').value!='manual')gen('auto',true);else{play(0,4)}}
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const short=(s,n=16)=>{s=(s||'').replace(/\s+/g,' ').split(/[。、，,！!？?]/)[0].trim();return s.length>n?s.slice(0,n)+'…':s};
+function mk(a,txt,i,d){const tp=T[tpl];return{a:a.id,d,txt,fx:tp.fx[i%tp.fx.length],tr:i?tp.tr:'cut',an:tp.an,pos:tp.pos,sz:1,col:tp.col,band:tp.band,zm:1,br:1,co:1,sa:1,vs:0,sp:1,fit:false,lock:false}}
+function gen(mode,keep){const U=assets.filter(a=>a.use);if(!U.length)return toast('先に写真・動画を取り込んでください');if(mode=='manual')return;
+const tp=T[tpl],tot=durSel(),nm=$('#pn').value.trim(),ct=$('#pc').value.trim(),ft=$('#pf').value.split('\n').map(s=>s.trim()).filter(Boolean),sc=$('#ps').value.split('\n').map(s=>s.trim()).filter(Boolean);
+let seq=[],txt=[];
+if(mode=='script'&&sc.length){txt=sc;seq=sc.map((_,i)=>U[i%U.length])}
+else{const n=mode=='order'?U.length:Math.max(2,Math.round(tot/tp.pace)),pool=mode=='order'?U:shuf(U);for(let i=0;i<n;i++)seq.push(pool[i%pool.length]);
+txt=Array(n).fill('');txt[0]=short(ct)||nm;for(let i=1;i<n-1;i++)txt[i]=ft[i-1]?short(ft[i-1],22):'';if(n>1)txt[n-1]=(nm||$('#bn').value)+'\nMakuakeページへ'}
+const old=S.slice(),out=[];let locked=0,free=0;seq.forEach((a,i)=>{const o=old[i];if(o&&o.lock){locked+=o.d;out.push(o)}else{free++;out.push(null)}});
+const d=Math.max(1.5,(tot-locked)/Math.max(1,free));S=out.map((o,i)=>o||mk(seq[i],txt[i],i,d));
+sel=-1;rStrip();rPanel();t=0;render(0);if(keep)play(0,4)}
+function addScene(id){const a=assets.find(x=>x.id==id);S.push(mk(a,'',S.length,3));rStrip();sel=S.length-1;rPanel();render(t)}
+function suggest(){const ft=$('#pf').value.split('\n').map(s=>s.trim()).filter(Boolean);if(!S.length)return toast('先に自動生成してください');let k=0;S.forEach((s,i)=>{if(!s.txt){const v=i==0?short($('#pc').value)||$('#pn').value:ft[k++];if(v)s.txt=short(v,22)}});if(!ft.length&&!$('#pc').value)toast('商品情報（キャッチコピー・特徴）を入力すると提案できます');rStrip();rPanel();render(t)}
+/* ---------- strip / panel ---------- */
+let dragI=-1;
+function rStrip(){const e=$('#strip');e.innerHTML=S.map((s,i)=>{const a=assets.find(x=>x.id==s.a);return`<div class="sc ${i==sel?'sel':''}" draggable="true" data-i="${i}">${a?thumb(a):''}<i>${s.lock?'🔒':''}</i><b>${i+1} · ${s.d.toFixed(1)}s</b></div>`}).join('')||'<small>素材を取り込み「自動生成」を押すとシーンが並びます</small>';
+e.querySelectorAll('.sc').forEach(el=>{const i=+el.dataset.i;el.onclick=()=>{sel=i;rStrip();rPanel();t=starts()[i];render(t)};el.ondragstart=()=>dragI=i;el.ondragover=e=>e.preventDefault();el.ondrop=()=>{if(dragI<0||dragI==i)return;const[m]=S.splice(dragI,1);S.splice(i,0,m);sel=i;dragI=-1;rStrip();rPanel();render(t)}})}
+const OPT={fx:{zin:'ズームイン',zout:'ズームアウト',pl:'左へ移動',pr:'右へ移動',pu:'上へ移動',none:'固定'},tr:{cut:'カット',fade:'フェード',dissolve:'クロスディゾルブ',blur:'ブラー→鮮明',wipe:'マスク',slide:'スライド'},an:{fade:'フェード',slide:'スライド',type:'タイプライター',mask:'マスク',zoom:'ズーム'},pos:{.15:'上',.5:'中央',.82:'下'}};
+const FD=[['txt','テロップ','area'],['d','表示秒','num',.5,30,.1],['fx','カメラ','sel'],['zm','拡大率','rng',1,2.5,.05],['tr','切替','sel'],['an','文字演出','sel'],['pos','文字位置','rng',.08,.95,.01],['sz','文字サイズ','rng',.6,2,.05],['col','文字色','col'],['band','背景帯','chk'],['br','明るさ','rng',.5,1.5,.05],['co','コントラスト','rng',.5,1.5,.05],['sa','彩度','rng',0,2,.05],['fit','全体表示(切らない)','chk'],['vs','動画開始秒','num',0,600,.1],['sp','再生速度','rng',.25,3,.05],['lock','固定（再生成しない）','chk']];
+function rPanel(){const s=S[sel],e=$('#pn2');if(!s){e.innerHTML='<small>下のシーンを選択してください</small>';return}
+e.innerHTML=FD.map(([k,l,ty,a,b,st])=>{let c='';if(ty=='area')c=`<textarea rows="2" data-k="${k}">${s[k]||''}</textarea>`;else if(ty=='num')c=`<input type="number" data-k="${k}" min="${a}" max="${b}" step="${st}" value="${s[k]}">`;else if(ty=='rng')c=`<input type="range" data-k="${k}" min="${a}" max="${b}" step="${st}" value="${s[k]}">`;else if(ty=='col')c=`<input type="color" data-k="${k}" value="${s[k]}">`;else if(ty=='chk')c=`<input type="checkbox" data-k="${k}" ${s[k]?'checked':''}>`;else c=`<select data-k="${k}">${Object.entries(OPT[k]).map(([v,n])=>`<option value="${v}" ${s[k]==v?'selected':''}>${n}</option>`).join('')}</select>`;return`<div class="row"><label>${l}</label>${c}</div>`}).join('')+`<div class="row"><label>素材差替</label><select id="rp">${assets.map(a=>`<option value="${a.id}" ${a.id==s.a?'selected':''}>${a.name}</option>`).join('')}</select></div><div class="row"><button onclick="short1()">短いコピーに変換</button><button onclick="dup()">複製</button><button onclick="del()">削除</button></div>`;
+e.querySelectorAll('[data-k]').forEach(i=>{i.oninput=()=>{const k=i.dataset.k;s[k]=i.type=='checkbox'?i.checked:i.type=='range'||i.type=='number'?+i.value:i.value;if(k=='d'||k=='lock')rStrip();render(t)}});$('#rp').onchange=e=>{s.a=+e.target.value;rStrip();render(t)}}
+const short1=()=>{S[sel].txt=short(S[sel].txt,14);rPanel();render(t)},dup=()=>{S.splice(sel+1,0,{...S[sel]});sel++;rStrip();rPanel()},del=()=>{S.splice(sel,1);sel=-1;rStrip();rPanel();render(t)};
+/* ---------- render ---------- */
+const FL=s=>{const g=T[tpl].gr;return`brightness(${s.br*g[0]}) contrast(${s.co*g[1]}) saturate(${s.sa*g[2]})`};
+function media(sc,p,ex=''){const A=assets.find(a=>a.id==sc.a);cx.save();if(A){const el=A.el,w=A.v?el.videoWidth:el.naturalWidth,h=A.v?el.videoHeight:el.naturalHeight;if(w){let z=1,px=0,py=0;const f=sc.fx;if(f=='zin')z=1+.1*p;else if(f=='zout')z=1.1-.1*p;else if(f=='pl'){z=1.1;px=(.5-p)*.05}else if(f=='pr'){z=1.1;px=(p-.5)*.05}else if(f=='pu'){z=1.1;py=(.5-p)*.05}
+z*=sc.zm;const k=(sc.fit?Math.min:Math.max)(W/w,H/h)*z;cx.filter=ex+FL(sc);cx.drawImage(el,(W-w*k)/2+px*W,(H-h*k)/2+py*H,w*k,h*k)}}cx.restore()}
+function sync(sc,p){const A=assets.find(a=>a.id==sc.a);if(!A||!A.v)return;const el=A.el,tg=Math.min(sc.vs+p*sc.d*sc.sp,(el.duration||1e9)-.05);if(!playing||Math.abs(el.currentTime-tg)>.4)try{el.currentTime=tg}catch(e){}el.playbackRate=sc.sp;if(playing&&el.paused)el.play().catch(()=>{})}
+function cap(sc,lt){if(!sc.txt)return;const tp=T[tpl],s0=.4,ti=.7,ou=.4,ip=clamp((lt-s0)/ti),o=lt>sc.d-ou?clamp((sc.d-lt)/ou):1;if(ip<=0||o<=0)return;
+const fs=Math.round(Math.min(W,H)*.062*sc.sz*(tp.fs||1)),an=sc.an;cx.save();cx.font=`${tp.w} ${fs}px ${tp.font}`;if('letterSpacing'in cx)cx.letterSpacing=(tp.ls*fs)+'px';cx.textAlign='center';cx.textBaseline='middle';
+let lines=[];for(const ln of sc.txt.split('\n')){let cur='';for(const ch of[...(tp.up?ln.toUpperCase():ln)]){if(cx.measureText(cur+ch).width>W*.86&&cur){lines.push(cur);cur=ch}else cur+=ch}lines.push(cur)}
+const lh=fs*1.45,bh=lines.length*lh,cy=H*sc.pos-bh/2+lh/2,mw=Math.max(...lines.map(l=>cx.measureText(l).width)),all=lines.join('').length;
+cx.globalAlpha=(an=='mask'||an=='type'?clamp(ip*4):ip)*o;cx.translate(W/2,H*sc.pos);if(an=='zoom'){const z=.85+.15*ip;cx.scale(z,z)}if(an=='slide')cx.translate(0,(1-ip)*fs);cx.translate(-W/2,-H*sc.pos);
+if(an=='mask'){cx.beginPath();cx.rect(W/2-mw/2-fs,0,(mw+2*fs)*ip,H);cx.clip()}
+if(sc.band){cx.fillStyle='rgba(0,0,0,.55)';cx.fillRect(W/2-mw/2-fs,cy-lh/2-fs*.3,mw+2*fs,bh+fs*.6)}
+const n=an=='type'?Math.floor(all*ip):all;let u=0;cx.lineJoin='round';cx.lineWidth=fs*.14;cx.strokeStyle='rgba(0,0,0,.65)';cx.shadowColor='rgba(0,0,0,.6)';cx.shadowBlur=fs*.25;cx.fillStyle=sc.col;
+lines.forEach((l,i)=>{const sh=l.slice(0,Math.max(0,n-u));u+=l.length;if(sh){cx.strokeText(sh,W/2,cy+i*lh);cx.fillText(sh,W/2,cy+i*lh)}});cx.restore()}
+function render(tt){cx.save();cx.globalAlpha=1;cx.filter='none';cx.fillStyle='#000';cx.fillRect(0,0,W,H);
+if(!S.length){cx.fillStyle='#777';cx.font=`${H*.035}px sans-serif`;cx.textAlign='center';cx.fillText('素材を取り込み、「自動生成」を押してください',W/2,H/2);cx.restore();return}
+const[i,lt]=at(tt),sc=S[i],tp=T[tpl],td=Math.min(tp.trd,sc.d*.5),p=clamp(lt/sc.d);sync(sc,p);
+if(i>0&&lt<td&&sc.tr!='cut'){let u=lt/td;u=u*u*(3-2*u);const pv=S[i-1];
+if(sc.tr=='fade'){if(u<.5){cx.globalAlpha=1-u*2;media(pv,1)}else{cx.globalAlpha=u*2-1;media(sc,p)}}
+else if(sc.tr=='dissolve'){media(pv,1);cx.globalAlpha=u;media(sc,p)}
+else if(sc.tr=='blur'){media(pv,1);cx.globalAlpha=u;media(sc,p,`blur(${((1-u)*24).toFixed(1)}px) `)}
+else if(sc.tr=='wipe'){media(pv,1);cx.save();cx.beginPath();cx.rect(0,0,W*u,H);cx.clip();media(sc,p);cx.restore()}
+else{media(pv,1);cx.save();cx.translate((1-u)*W,0);media(sc,p);cx.restore()}cx.globalAlpha=1}else media(sc,p);
+assets.forEach(a=>{if(a.v&&!a.el.paused&&!(S[i]&&S[i].a==a.id))a.el.pause()});
+if(tp.vg){const g=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.75);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${tp.vg})`);cx.fillStyle=g;cx.fillRect(0,0,W,H)}
+cap(sc,lt);
+if($('#lo').checked){const m=Math.min(W,H)*.04;if(logoImg){const h=Math.min(W,H)*.07,w=logoImg.width*h/logoImg.height;cx.globalAlpha=.9;cx.drawImage(logoImg,W-w-m,m,w,h)}else{cx.globalAlpha=.85;cx.fillStyle=$('#bc').value;cx.font=`600 ${Math.min(W,H)*.032}px ${tp.font}`;cx.textAlign='right';cx.textBaseline='top';cx.shadowColor='#0009';cx.shadowBlur=8;cx.fillText($('#bn').value,W-m,m)}cx.globalAlpha=1;cx.shadowBlur=0}
+if(tp.lb){cx.fillStyle='#000';cx.fillRect(0,0,W,H*tp.lb);cx.fillRect(0,H*(1-tp.lb),W,H*tp.lb)}
+cx.restore();ui()}
+function ui(){const tot=total()||1;$('#tm').textContent=`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')} / ${Math.floor(tot/60)}:${String(Math.round(tot%60)).padStart(2,'0')}`;if(!ui.s)$('#seek').value=t/tot*1000;
+if(exp)$('#st').textContent=`書き出し中 ${Math.round(clamp(t/tot)*100)}%（このタブを開いたままにしてください）`;
+document.querySelectorAll('.sc').forEach((e,i)=>e.classList.toggle('cur',i==at(t)[0]))}
+$('#seek').onpointerdown=()=>ui.s=1;$('#seek').onpointerup=()=>ui.s=0;$('#seek').oninput=e=>{if(playing)pause();t=e.target.value/1000*total();render(t)};
+/* ---------- play / export ---------- */
+function play(from=0,sa=null){if(!S.length)return;ensure();AC.resume();pause();tStart=AC.currentTime-from;playing=true;stopAt=sa;startAudio(from);$('#pb').textContent='■ 停止';tick()}
+function tick(){if(!playing)return;t=AC.currentTime-tStart;const end=Math.min(stopAt??1e9,total());if(t>=end){t=end;const f=onEnd;pause();render(t);if(f){onEnd=null;f()}return}render(t);raf=requestAnimationFrame(tick)}
+function pause(){playing=false;cancelAnimationFrame(raf);if(AC)stopAudio();assets.forEach(a=>a.v&&a.el.pause());$('#pb').textContent='▶ 再生'}
+function togglePlay(){if(playing)pause();else play(t>=total()-.05?0:t)}
+function exportV(){if(!S.length)return toast('シーンがありません');if(!window.MediaRecorder||!cv.captureStream)return toast('このブラウザは書き出しに未対応です。Chrome / Edge の最新版をお使いください');
+ensure();AC.resume();const mt=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));if(!mt)return toast('対応する動画形式がありません');
+const ext=mt.startsWith('video/mp4')?'mp4':'webm',ch=[],st=cv.captureStream(30);dest.stream.getAudioTracks().forEach(x=>st.addTrack(x));
+try{rec=new MediaRecorder(st,{mimeType:mt,videoBitsPerSecond:H>=1080?8e6:4e6,audioBitsPerSecond:192e3})}catch(e){return toast('書き出しを開始できません：'+e.message)}
+rec.ondataavailable=e=>e.data.size&&ch.push(e.data);rec.onerror=e=>{toast('書き出しエラー：'+(e.error&&e.error.message||'不明'));fin()};
+rec.onstop=()=>{fin();if(cancelled)return toast('書き出しをキャンセルしました');const b=new Blob(ch,{type:mt.split(';')[0]}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=($('#pj').value||'video')+'.'+ext;a.click();toast(`完成：${ext.toUpperCase()}形式で保存しました（${(b.size/1048576).toFixed(1)}MB）`+(ext=='webm'?' ※このブラウザはMP4非対応のためWebMです':''))};
+function fin(){exp=false;mon.gain.value=1;$('#cx').style.display='none';$('#st').textContent=''}
+mon.gain.value=0;cancelled=false;exp=true;$('#cx').style.display='';rec.start(1000);onEnd=()=>setTimeout(()=>rec.state!='inactive'&&rec.stop(),400);play(0)}
+function cancelExp(){cancelled=true;onEnd=null;pause();if(rec&&rec.state!='inactive')rec.stop()}
+/* ---------- init ---------- */
+(()=>{const m=window.MediaRecorder?(['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4'].some(x=>MediaRecorder.isTypeSupported(x))?'MP4(H.264/AAC)書き出し対応':'このブラウザはWebM書き出しのみ'):'書き出し非対応ブラウザ';$('#cap').textContent=m})();
+pick('LUXURY');size();render(0);
+</script></body></html>
