@@ -18,13 +18,12 @@ textarea{width:100%;resize:vertical}input[type=range]{padding:0;width:100%}input
 #strip{display:flex;gap:6px;height:76px}.sc{width:112px;flex:none;position:relative;border:2px solid var(--ln);border-radius:6px;overflow:hidden;cursor:pointer;background:#000}.sc.sel{border-color:var(--ac)}.sc.cur{box-shadow:0 0 0 2px #fff6}
 .sc .th{width:100%;height:100%;object-fit:cover;opacity:.7}.sc b{position:absolute;left:4px;bottom:2px;font-size:11px;text-shadow:0 0 4px #000}.sc i{position:absolute;right:4px;top:2px;font-style:normal;font-size:11px}
 #toast{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);background:#000c;padding:8px 14px;border-radius:8px;display:none;max-width:80vw;z-index:9}
-small{color:var(--mu)}
+small{color:var(--mu)}.ctl{display:flex;gap:10px;align-items:center;width:min(100%,780px);flex-wrap:wrap}.ctl #seek{flex:1;min-width:120px}.big{font-size:15px;padding:10px 20px}.bt{display:inline-block;background:var(--ac);color:#111;font-weight:600;padding:12px 26px;border-radius:8px;text-decoration:none;font-size:16px}#ov{display:none;position:fixed;inset:0;background:#000c;z-index:20;align-items:center;justify-content:center}#ovb{background:var(--p);border:1px solid var(--ln);border-radius:12px;padding:20px;width:min(560px,92vw);text-align:center}#ovb video{width:100%;max-height:48vh;background:#000;border-radius:8px;margin:10px 0}.bar{height:8px;background:var(--p2);border-radius:4px;overflow:hidden;margin:12px 0}.bar i{display:block;height:100%;width:0;background:var(--ac)}
 @media(max-width:900px){body{display:block;height:auto}.L,.R{max-height:none}.C{height:auto}#cv{max-height:none;width:100%}.B{height:130px}}
 </style></head><body>
 <div class="top"><input id="pj" type="text" value="無題プロジェクト" style="width:150px"><button class="pri" onclick="gen($('#md').value)">自動生成</button>
 <select id="md" style="width:auto"><option value="auto">完全おまかせ</option><option value="order">素材の順番を維持</option><option value="script">台本に沿って生成</option><option value="manual">手動編集</option></select>
 <button onclick="gen($('#md').value==='manual'?'auto':$('#md').value)">別パターンを生成</button>
-<button onclick="togglePlay()" id="pb">▶ 再生</button><input id="seek" type="range" min="0" max="1000" value="0" style="width:160px"><span id="tm">0:00</span>
 <button class="pri" onclick="exportV()">MP4書き出し</button><button onclick="cancelExp()" id="cx" style="display:none">キャンセル</button><small id="cap"></small></div>
 
 <div class="L">
@@ -37,7 +36,7 @@ small{color:var(--mu)}
 <button onclick="suggest()" style="margin-top:4px">字幕を自動提案</button>
 </div>
 
-<div class="C"><canvas id="cv" width="1920" height="1080"></canvas><small id="st"></small></div>
+<div class="C"><canvas id="cv" width="1920" height="1080"></canvas><div class="ctl"><button id="pb" class="pri big" onclick="togglePlay()">▶ 再生</button><input id="seek" type="range" min="0" max="1000" value="0"><span id="tm">0:00</span><button class="big" onclick="exportV()">動画を書き出す</button></div><small id="st"></small></div>
 
 <div class="R"><h4>選択シーン</h4><div id="pn2"><small>下のシーンを選択してください</small></div>
 <h4>動画設定</h4>
@@ -50,17 +49,17 @@ small{color:var(--mu)}
 <div class="row"><label>ロゴ</label><input id="lg" type="file" accept="image/*"></div>
 <div class="row"><label>ロゴ表示</label><input id="lo" type="checkbox" checked onchange="render(t)"></div>
 <h4>音</h4>
-<div class="row"><label>BGM</label><input id="bf" type="file" accept="audio/*"></div>
+<div class="row"><label>BGM</label><input id="bf" type="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg"></div><div class="row"><label></label><small id="bgms">未取り込み</small><button onclick="audition('bgm')">試聴</button></div>
 <div class="row"><label>BGM音量</label><input id="bv" type="range" min="0" max="1" step=".05" value=".6"></div>
 <div class="row"><label>開始位置(秒)</label><input id="bs" type="number" min="0" value="0"></div>
-<div class="row"><label>効果音</label><input id="sf" type="file" accept="audio/*"></div>
+<div class="row"><label>効果音</label><input id="sf" type="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg"></div><div class="row"><label></label><small id="ses">未取り込み</small><button onclick="audition('se')">試聴</button></div>
 <div class="row"><label>効果音音量</label><input id="sv" type="range" min="0" max="1" step=".05" value=".8"></div>
 <div class="row"><label>SE自動配置</label><input id="as" type="checkbox" checked></div>
 <div class="row"><label>元動画音声</label><input id="vo" type="range" min="0" max="1" step=".05" value="0" oninput="vg()"></div>
 <small>BGMは自動でループ・最後2秒でフェードアウトします。</small>
 </div>
 
-<div class="B"><div id="strip"></div></div><div id="toast"></div>
+<div class="B"><div id="strip"></div></div><div id="toast"></div><div id="ov"><div id="ovb"></div></div>
 
 <script>
 const $=s=>document.querySelector(s),clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
@@ -86,8 +85,10 @@ const starts=()=>{let s=0;return S.map(x=>{const r=s;s+=x.d;return r})};
 /* ---------- audio ---------- */
 function ensure(){if(AC)return;AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();dest=AC.createMediaStreamDestination();mon=AC.createGain();master.connect(dest);master.connect(mon);mon.connect(AC.destination)}
 function vg(){assets.forEach(a=>a.g&&(a.g.gain.value=+$('#vo').value))}
-async function loadAudio(f,k){if(!f)return;ensure();try{const b=await AC.decodeAudioData(await f.arrayBuffer());k=='bgm'?bgm=b:se=b;toast(f.name+' を読み込みました')}catch(e){toast('音声を読み込めません（'+f.name+'）。MP3/WAV/M4Aをお試しください')}}
-$('#bf').onchange=e=>loadAudio(e.target.files[0],'bgm');$('#sf').onchange=e=>loadAudio(e.target.files[0],'se');
+let prev=null;
+async function loadAudio(f,k){if(!f)return;const st=$('#'+k+'s');st.textContent='読み込み中…';try{ensure();const ab=await f.arrayBuffer(),b=await new Promise((ok,ng)=>{const p=AC.decodeAudioData(ab,ok,ng);if(p&&p.catch)p.catch(ng)});k=='bgm'?bgm=b:se=b;st.textContent='✓ '+f.name+'（'+b.duration.toFixed(1)+'秒）';toast(f.name+' を読み込みました')}catch(e){st.textContent='× 読み込めませんでした';toast('音声を読み込めません：'+f.name+'（'+(e&&e.message||'デコード失敗')+'）。ファイルが壊れているか、このブラウザで非対応の可能性があります。WAVやM4Aに変換してお試しください')}}
+$('#bf').onchange=e=>{const f=e.target.files[0];e.target.value='';loadAudio(f,'bgm')};$('#sf').onchange=e=>{const f=e.target.files[0];e.target.value='';loadAudio(f,'se')};
+function audition(k){const b=k=='bgm'?bgm:se;if(!b)return toast('先に音源を取り込んでください');ensure();AC.resume();if(prev){try{prev.stop()}catch(e){}prev=null;return}const s=AC.createBufferSource(),g=AC.createGain();s.buffer=b;g.gain.value=+$(k=='bgm'?'#bv':'#sv').value;s.connect(g);g.connect(AC.destination);s.start(0,k=='bgm'?(+$('#bs').value||0)%b.duration:0);prev=s;s.onended=()=>{prev=null}}
 function stopAudio(){srcs.forEach(s=>{try{s.stop()}catch(e){}});srcs=[]}
 function startAudio(from){stopAudio();const now=AC.currentTime,T0=now-from,tot=total();
 if(bgm){const s=AC.createBufferSource(),g=AC.createGain(),v=+$('#bv').value;s.buffer=bgm;s.loop=true;g.gain.setValueAtTime(from<.01?0:v,now);if(from<.01)g.gain.linearRampToValueAtTime(v,now+1);g.gain.setValueAtTime(v,Math.max(now,T0+tot-2));g.gain.linearRampToValueAtTime(0,T0+tot);s.connect(g);g.connect(master);s.start(now,((+$('#bs').value||0)+from)%bgm.duration);srcs.push(s)}
@@ -193,7 +194,7 @@ if($('#lo').checked){const m=Math.min(W,H)*.04;if(logoImg){const h=Math.min(W,H)
 if(tp.lb){cx.fillStyle='#000';cx.fillRect(0,0,W,H*tp.lb);cx.fillRect(0,H*(1-tp.lb),W,H*tp.lb)}
 cx.restore();ui()}
 function ui(){const tot=total()||1;$('#tm').textContent=`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')} / ${Math.floor(tot/60)}:${String(Math.round(tot%60)).padStart(2,'0')}`;if(!ui.s)$('#seek').value=t/tot*1000;
-if(exp)$('#st').textContent=`書き出し中 ${Math.round(clamp(t/tot)*100)}%（このタブを開いたままにしてください）`;
+if(exp&&$('#pp')){const q=Math.round(clamp(t/tot)*100);$('#pp').textContent=q+'%';$('#pbar').style.width=q+'%'}
 document.querySelectorAll('.sc').forEach((e,i)=>e.classList.toggle('cur',i==at(t)[0]))}
 $('#seek').onpointerdown=()=>ui.s=1;$('#seek').onpointerup=()=>ui.s=0;$('#seek').oninput=e=>{if(playing)pause();t=e.target.value/1000*total();render(t)};
 /* ---------- play / export ---------- */
@@ -205,10 +206,12 @@ function exportV(){if(!S.length)return toast('シーンがありません');if(!
 ensure();AC.resume();const mt=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));if(!mt)return toast('対応する動画形式がありません');
 const ext=mt.startsWith('video/mp4')?'mp4':'webm',ch=[],st=cv.captureStream(30);dest.stream.getAudioTracks().forEach(x=>st.addTrack(x));
 try{rec=new MediaRecorder(st,{mimeType:mt,videoBitsPerSecond:H>=1080?8e6:4e6,audioBitsPerSecond:192e3})}catch(e){return toast('書き出しを開始できません：'+e.message)}
-rec.ondataavailable=e=>e.data.size&&ch.push(e.data);rec.onerror=e=>{toast('書き出しエラー：'+(e.error&&e.error.message||'不明'));fin()};
-rec.onstop=()=>{fin();if(cancelled)return toast('書き出しをキャンセルしました');const b=new Blob(ch,{type:mt.split(';')[0]}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=($('#pj').value||'video')+'.'+ext;a.click();toast(`完成：${ext.toUpperCase()}形式で保存しました（${(b.size/1048576).toFixed(1)}MB）`+(ext=='webm'?' ※このブラウザはMP4非対応のためWebMです':''))};
+rec.ondataavailable=e=>e.data.size&&ch.push(e.data);rec.onerror=e=>{toast('書き出しエラー：'+(e.error&&e.error.message||'不明'));fin();hideOv()};
+rec.onstop=()=>{fin();if(cancelled){hideOv();return toast('書き出しをキャンセルしました')}const b=new Blob(ch,{type:mt.split(';')[0]}),u=URL.createObjectURL(b),nm=($('#pj').value||'video')+'.'+ext;
+showOv(`<h3 style="margin:0">✓ 動画が完成しました</h3><video controls playsinline src="${u}"></video><div><small>${ext.toUpperCase()}形式・${(b.size/1048576).toFixed(1)}MB${ext=='webm'?'（このブラウザはMP4非対応のためWebMです）':''}</small></div><div style="margin:14px 0"><a class="bt" href="${u}" download="${nm}">動画を保存する</a></div><button onclick="hideOv()">閉じる</button><div style="margin-top:8px"><small>保存先は、お使いのブラウザのダウンロードフォルダです。</small></div>`)};
 function fin(){exp=false;mon.gain.value=1;$('#cx').style.display='none';$('#st').textContent=''}
-mon.gain.value=0;cancelled=false;exp=true;$('#cx').style.display='';rec.start(1000);onEnd=()=>setTimeout(()=>rec.state!='inactive'&&rec.stop(),400);play(0)}
+mon.gain.value=0;cancelled=false;exp=true;showOv('<h3 style="margin:0">動画を書き出し中… <span id="pp">0%</span></h3><div class="bar"><i id="pbar"></i></div><small>完成まで、このタブを開いたままにしてください。</small><div style="margin-top:12px"><button onclick="cancelExp()">キャンセル</button></div>');rec.start(1000);onEnd=()=>setTimeout(()=>rec.state!='inactive'&&rec.stop(),400);play(0)}
+const showOv=h=>{$('#ovb').innerHTML=h;$('#ov').style.display='flex'},hideOv=()=>{$('#ov').style.display='none';$('#ovb').innerHTML=''};
 function cancelExp(){cancelled=true;onEnd=null;pause();if(rec&&rec.state!='inactive')rec.stop()}
 /* ---------- init ---------- */
 (()=>{const m=window.MediaRecorder?(['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4'].some(x=>MediaRecorder.isTypeSupported(x))?'MP4(H.264/AAC)書き出し対応':'このブラウザはWebM書き出しのみ'):'書き出し非対応ブラウザ';$('#cap').textContent=m})();
