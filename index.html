@@ -19,6 +19,7 @@ textarea{width:100%;resize:vertical}input[type=range]{padding:0;width:100%}input
 .sc .th{width:100%;height:100%;object-fit:cover;opacity:.7}.sc b{position:absolute;left:4px;bottom:2px;font-size:11px;text-shadow:0 0 4px #000}.sc i{position:absolute;right:4px;top:2px;font-style:normal;font-size:11px}
 #toast{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);background:#000c;padding:8px 14px;border-radius:8px;display:none;max-width:80vw;z-index:9}
 small{color:var(--mu)}#up{position:fixed;right:14px;bottom:16px;z-index:15;display:none;background:var(--ac);color:#111;font-weight:600;border:0;padding:12px 16px;border-radius:24px;box-shadow:0 4px 16px #0008}.ctl{display:flex;gap:10px;align-items:center;width:min(100%,780px);flex-wrap:wrap}.ctl #seek{flex:1;min-width:120px}.big{font-size:15px;padding:10px 20px}.bt{display:inline-block;background:var(--ac);color:#111;font-weight:600;padding:12px 26px;border-radius:8px;text-decoration:none;font-size:16px}#ov{display:none;position:fixed;inset:0;background:#000c;z-index:20;align-items:center;justify-content:center}#ovb{background:var(--p);border:1px solid var(--ln);border-radius:12px;padding:20px;width:min(560px,92vw);text-align:center}#ovb video{width:100%;max-height:48vh;background:#000;border-radius:8px;margin:10px 0}.bar{height:8px;background:var(--p2);border-radius:4px;overflow:hidden;margin:12px 0}.bar i{display:block;height:100%;width:0;background:var(--ac)}
+.sc{touch-action:pan-y;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}.sc img,.sc video{pointer-events:none;-webkit-user-drag:none}.sc.over{outline:2px dashed var(--ac);outline-offset:-2px}#cv{touch-action:none}
 #tabs{display:none}
 @media(max-width:900px){
 html,body{overflow-x:hidden;width:100%}
@@ -53,14 +54,14 @@ body[data-tab=p] .top.g{display:flex}
 <div class="row"><label>カメラ</label><select id="gcm"><option value="auto">おまかせ</option><option value="none">固定</option><option value="zin">ゆっくりズームイン</option><option value="zout">ゆっくりズームアウト</option><option value="pl">左へ移動</option><option value="pr">右へ移動</option><option value="pu">上へ移動</option></select></div>
 <small>選ぶと全シーンに反映します。シーンごとの変更は「シーン」で。</small></div>
 <div class="g" data-t="p"><h4>商品情報</h4>
-<input id="pn" type="text" placeholder="商品名"><div style="height:4px"></div><input id="pc" type="text" placeholder="キャッチコピー"><div style="height:4px"></div><input id="pe" type="text" placeholder="英語キャッチ（任意）例: Light Up Your Camp"><label><input type="checkbox" id="ae" checked> 英字を自動で入れる</label>
+<input id="pn" type="text" placeholder="商品名"><div style="height:4px"></div><input id="pc" type="text" placeholder="キャッチコピー"><label><input type="checkbox" id="ae" checked> 英字を自動で入れる</label>
 <div style="height:4px"></div><textarea id="pf" rows="3" placeholder="商品の特徴（1行1項目。入力した内容だけが字幕になります）"></textarea>
 <textarea id="pt" rows="1" placeholder="ターゲット層（任意）"></textarea><textarea id="ps" rows="3" placeholder="台本（1行＝1シーン。台本モード用）"></textarea>
 <button onclick="suggest()" style="margin-top:4px">字幕を自動提案</button>
 <h4>保存</h4><small>素材と編集内容は、この端末のブラウザに自動保存されます。</small><div style="margin-top:6px"><button onclick="resetAll()">保存内容をすべて消す</button></div></div>
 </div>
 
-<div class="C"><canvas id="cv" width="1920" height="1080"></canvas><div class="ctl"><button id="pb" class="pri big" onclick="togglePlay()">▶ 再生</button><input id="seek" type="range" min="0" max="1000" value="0"><span id="tm">0:00</span><button class="big x" onclick="gen($('#md').value=='manual'?'auto':$('#md').value)">再作成（更新）</button><button class="big x" onclick="exportV()">動画を書き出す</button></div><small id="st"></small></div>
+<div class="C"><canvas id="cv" width="1920" height="1080"></canvas><div class="ctl"><button id="pb" class="pri big" onclick="togglePlay()">▶ 再生</button><input id="seek" type="range" min="0" max="1000" value="0"><span id="tm">0:00</span><button class="big x" onclick="gen($('#md').value=='manual'?'auto':$('#md').value)">再作成（更新）</button><button class="big x" onclick="exportV()">動画を書き出す</button></div><small id="st">プレビューを指でなぞると、文字の位置を動かせます</small></div>
 
 <div id="tabs"><button data-k="m" onclick="tab('m')">素材</button><button data-k="v" onclick="tab('v')">見た目</button><button data-k="s" onclick="tab('s')">シーン</button><button data-k="p" onclick="tab('p')">作成</button><button data-k="o" onclick="tab('o')">設定</button></div>
 <div class="R"><div class="g" data-t="s"><h4>選択シーン</h4><div id="pn2"><small>シーンを選択してください</small></div></div>
@@ -81,10 +82,19 @@ body[data-tab=p] .top.g{display:flex}
 
 
 <div class="row"><label>元動画音声</label><input id="vo" type="range" min="0" max="1" step=".05" value="0" oninput="vg()"></div>
-<small>BGMは自動でループし、最後の2秒でフェードアウトします。</small></div>
+<small>BGMは自動でループし、最後の2秒でフェードアウトします。</small>
+<h4>ナレーション（AIボイス・任意）</h4>
+<div class="row"><label>提供元</label><select id="nprov" onchange="nProv()"><option value="n">使わない</option><option value="g">Google Cloud 音声合成</option><option value="o">OpenAI 音声</option></select></div>
+<div class="row"><label>APIキー</label><input id="nkey" type="password" placeholder="キーを貼り付け" autocomplete="off"></div>
+<div class="row"><label>声</label><select id="nvoice"></select></div>
+<div class="row"><label>音量</label><input id="nv" type="range" min="0" max="1.5" step=".05" value="1"></div>
+<div class="row"><label>長さ調整</label><input id="nfit" type="checkbox" checked><small>ナレーションに合わせてシーンを延ばす</small></div>
+<button onclick="createNar()">ナレーション音声を作成</button> <small id="nst"></small>
+<div><small>読み上げる文は「シーン」タブの「ナレーション文」で直せます。文章だけが選んだサービスに送られ、写真・動画は送られません。利用料はサービス側で発生する場合があります。</small></div>
+</div>
 </div>
 
-<div class="B g" data-t="s"><div id="strip"></div></div><div id="toast"></div><button id="up" onclick="toTop()">↑ 再生画面へ戻る</button><div id="ov"><div id="ovb"></div></div>
+<div class="B g" data-t="s"><div id="strip"></div><small>長押し（パソコンはドラッグ）で並べ替え</small></div><div id="toast"></div><button id="up" onclick="toTop()">↑ 再生画面へ戻る</button><div id="ov"><div id="ovb"></div></div>
 
 <script>
 const $=s=>document.querySelector(s),clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
@@ -116,7 +126,9 @@ $('#bf').onchange=e=>{const f=e.target.files[0];e.target.value='';loadAudio(f,'b
 function audition(k){const b=k=='bgm'?bgm:se;if(!b)return toast('先に音源を取り込んでください');ensure();AC.resume();if(prev){try{prev.stop()}catch(e){}prev=null;return}const s=AC.createBufferSource(),g=AC.createGain();s.buffer=b;g.gain.value=+$(k=='bgm'?'#bv':'#sv').value;s.connect(g);g.connect(AC.destination);s.start(0,k=='bgm'?(+$('#bs').value||0)%b.duration:0);prev=s;s.onended=()=>{prev=null}}
 function stopAudio(){srcs.forEach(s=>{try{s.stop()}catch(e){}});srcs=[]}
 function startAudio(from){stopAudio();const now=AC.currentTime,T0=now-from,tot=total();
-if(bgm){const s=AC.createBufferSource(),g=AC.createGain(),v=+$('#bv').value;s.buffer=bgm;s.loop=true;g.gain.setValueAtTime(from<.01?0:v,now);if(from<.01)g.gain.linearRampToValueAtTime(v,now+1);g.gain.setValueAtTime(v,Math.max(now,T0+tot-2));g.gain.linearRampToValueAtTime(0,T0+tot);s.connect(g);g.connect(master);s.start(now,((+$('#bs').value||0)+from)%bgm.duration);srcs.push(s)}}
+if(bgm){const s=AC.createBufferSource(),g=AC.createGain(),v=+$('#bv').value;s.buffer=bgm;s.loop=true;g.gain.setValueAtTime(from<.01?0:v,now);if(from<.01)g.gain.linearRampToValueAtTime(v,now+1);g.gain.setValueAtTime(v,Math.max(now,T0+tot-2));g.gain.linearRampToValueAtTime(0,T0+tot);s.connect(g);g.connect(master);s.start(now,((+$('#bs').value||0)+from)%bgm.duration);srcs.push(s)}
+if($('#nprov').value!='n'){const nv=+$('#nv').value;starts().forEach((st,i)=>{const sc=S[i],b=sc.nr&&NR.get(nk(sc));if(b&&st+.4>=from-.01){const s=AC.createBufferSource(),g=AC.createGain();s.buffer=b;g.gain.value=nv;s.connect(g);g.connect(master);s.start(T0+st+.4);srcs.push(s)}})}
+}
 /* ---------- assets ---------- */
 async function addFiles(fs,rs){try{ensure()}catch(e){}const before=assets.length;if(!rs)toast('読み込み中…');for(const[fi,f]of fs.entries()){const v=f.type.startsWith('video')||/\.(mp4|mov|m4v|webm)$/i.test(f.name),im=f.type.startsWith('image')||/\.(jpe?g|png|webp|gif|avif|heic|heif)$/i.test(f.name);if(!v&&!im){toast(f.name+'：未対応の形式です（JPG/PNG/WebP/MP4など）');continue}
 const url=URL.createObjectURL(f),el=v?document.createElement('video'):new Image();
@@ -134,7 +146,7 @@ $('#tl').innerHTML=Object.keys(T).map(k=>`<button data-k="${k}" title="${LBL[k][
 function pick(k){tpl=k;document.querySelectorAll('#tl button').forEach(b=>b.classList.toggle('on',b.dataset.k==k));if(S.length&&$('#md').value!='manual')gen('auto',true);else{play(0,4)}}
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const short=(s,n=16)=>{s=(s||'').replace(/\s+/g,' ').split(/[。、，,！!？?]/)[0].trim();return s.length>n?s.slice(0,n)+'…':s};
-function mk(a,txt,i,d){const tp=T[tpl];return{a:a.id,d,txt,fx:tp.fx[i%tp.fx.length],tr:i?tp.tr:'cut',vt:tp.vt||'h',en:'',an:tp.an,al:tp.al||'c',ln:!!tp.ln,ef:tp.ef[i%tp.ef.length],es:1,pos:tp.pos,sz:1,col:tp.col,band:tp.band,zm:1,br:1,co:1,sa:1,vs:0,sp:1,fit:false,lock:false}}
+function mk(a,txt,i,d){const tp=T[tpl];return{a:a.id,d,txt,fx:tp.fx[i%tp.fx.length],tr:i?tp.tr:'cut',vt:tp.vt||'h',en:'',nr:'',an:tp.an,al:tp.al||'c',ln:!!tp.ln,ef:tp.ef[i%tp.ef.length],es:1,pos:tp.pos,sz:1,col:tp.col,band:tp.band,zm:1,br:1,co:1,sa:1,vs:0,sp:1,fit:false,lock:false}}
 function gen(mode,keep){const U=assets.filter(a=>a.use);if(!U.length)return toast('先に写真・動画を取り込んでください');if(mode=='manual')return;
 const tp=T[tpl],tot=durSel(),nm=$('#pn').value.trim(),ct=$('#pc').value.trim(),ft=$('#pf').value.split('\n').map(s=>s.trim()).filter(Boolean),sc=$('#ps').value.split('\n').map(s=>s.trim()).filter(Boolean);
 let seq=[],txt=[];
@@ -143,17 +155,17 @@ else{const n=mode=='order'?U.length:Math.max(2,Math.round(tot/tp.pace)),pool=mod
 txt=Array(n).fill('');txt[0]=short(ct)||nm;for(let i=1;i<n-1;i++)txt[i]=ft[i-1]?short(ft[i-1],22):'';if(n>1)txt[n-1]=(nm||$('#bn').value)+'\nMakuakeページへ'}
 const old=S.slice(),out=[];let locked=0,free=0;seq.forEach((a,i)=>{const o=old[i];if(o&&o.lock){locked+=o.d;out.push(o)}else{free++;out.push(null)}});
 const d=Math.max(1.5,(tot-locked)/Math.max(1,free));S=out.map((o,i)=>o||mk(seq[i],txt[i],i,d));
-const cl=tp.cl||['INTRODUCING','DETAIL','DESIGN','SCENE','STORY'];S.forEach((x,i)=>{if(out[i])return;const g=$('#gef').value,c=$('#gcm').value;if(g!='auto')x.ef=g;if(c!='auto')x.fx=c;x.en=!$('#ae').checked?'':i==0?($('#pe').value.trim()||cl[0]):i==S.length-1?$('#bn').value:cl[1+(i-1)%(cl.length-1)]});sel=-1;rStrip();rPanel();t=0;render(0);if(keep)play(0,4)}
+const cl=tp.cl||['INTRODUCING','DETAIL','DESIGN','SCENE','STORY'];S.forEach((x,i)=>{if(out[i])return;const g=$('#gef').value,c=$('#gcm').value;if(g!='auto')x.ef=g;if(c!='auto')x.fx=c;x.nr=(x.txt||'').replace(/\n/g,'。');x.en=!$('#ae').checked?'':i==0?cl[0]:i==S.length-1?$('#bn').value:cl[1+(i-1)%(cl.length-1)]});sel=-1;rStrip();rPanel();t=0;render(0);if(keep)play(0,4)}
 function addScene(id){const a=assets.find(x=>x.id==id);S.push(mk(a,'',S.length,3));rStrip();sel=S.length-1;rPanel();render(t)}
 function suggest(){const ft=$('#pf').value.split('\n').map(s=>s.trim()).filter(Boolean);if(!S.length)return toast('先に自動生成してください');let k=0;S.forEach((s,i)=>{if(!s.txt){const v=i==0?short($('#pc').value)||$('#pn').value:ft[k++];if(v)s.txt=short(v,22)}});if(!ft.length&&!$('#pc').value)toast('商品情報（キャッチコピー・特徴）を入力すると提案できます');rStrip();rPanel();render(t)}
 /* ---------- strip / panel ---------- */
 let dragI=-1;
-function rStrip(){const e=$('#strip');e.innerHTML=S.map((s,i)=>{const a=assets.find(x=>x.id==s.a);return`<div class="sc ${i==sel?'sel':''}" draggable="true" data-i="${i}">${a?thumb(a):''}<i>${s.lock?'🔒':''}</i><b>${i+1} · ${s.d.toFixed(1)}s</b></div>`}).join('')||'<small>素材を取り込み「自動生成」を押すとシーンが並びます</small>';
-e.querySelectorAll('.sc').forEach(el=>{const i=+el.dataset.i;el.onclick=()=>{sel=i;rStrip();rPanel();t=starts()[i];render(t)};el.ondragstart=()=>dragI=i;el.ondragover=e=>e.preventDefault();el.ondrop=()=>{if(dragI<0||dragI==i)return;const[m]=S.splice(dragI,1);S.splice(i,0,m);sel=i;dragI=-1;rStrip();rPanel();render(t)}})}
+function rStrip(){const e=$('#strip');e.innerHTML=S.map((s,i)=>{const a=assets.find(x=>x.id==s.a);return`<div class="sc ${i==sel?'sel':''}" data-i="${i}">${a?thumb(a):''}<i>${s.lock?'🔒':''}</i><b>${i+1} · ${s.d.toFixed(1)}s</b></div>`}).join('')||'<small>素材を取り込み「自動生成」を押すとシーンが並びます</small>';
+e.querySelectorAll('.sc').forEach(el=>{const i=+el.dataset.i;el.onclick=()=>{if(Date.now()-lastDrag<500)return;sel=i;rStrip();rPanel();t=starts()[i]+Math.min(1.4,S[i].d*.6);render(t)};el.onpointerdown=e=>stripDown(e,i,el)})}
 const OPT={fx:{zin:'ズームイン',zout:'ズームアウト',pl:'左へ移動',pr:'右へ移動',pu:'上へ移動',none:'固定'},tr:{cut:'カット',fade:'フェード',dissolve:'クロスディゾルブ',blur:'ブラー→鮮明',wipe:'マスク',slide:'スライド'},an:{fade:'フェード',slide:'スライド',type:'タイプライター',mask:'マスク',zoom:'ズーム',split:'1行ずつせり上がり',letters:'1文字ずつ浮かぶ',blurin:'ぼかしから鮮明に',track:'文字間が縮む'},al:{c:'中央',l:'左',r:'右'},vt:{h:'横書き',v:'縦書き'},ef:{none:'なし',leak:'光漏れ',grain:'フィルムグレイン',shine:'光の反射',flash:'フラッシュ',glow:'ソフトグロー',vig:'周辺を暗く',warm:'暖色'},pos:{.15:'上',.5:'中央',.82:'下'}};
-const FD=[['txt','テロップ','area'],['en','英字（サブ）','text'],['d','表示秒','num',.5,30,.1],['fx','カメラ','sel'],['zm','拡大率','rng',1,2.5,.05],['ef','映像エフェクト','sel'],['es','エフェクト強さ','rng',0,1.5,.05],['tr','切替','sel'],['an','文字演出','sel'],['vt','書字方向','sel'],['al','文字そろえ','sel'],['ln','アクセント線','chk'],['pos','文字位置','rng',.08,.95,.01],['sz','文字サイズ','rng',.6,2,.05],['col','文字色','col'],['band','背景帯','chk'],['br','明るさ','rng',.5,1.5,.05],['co','コントラスト','rng',.5,1.5,.05],['sa','彩度','rng',0,2,.05],['fit','全体表示(切らない)','chk'],['vs','動画開始秒','num',0,600,.1],['sp','再生速度','rng',.25,3,.05],['lock','固定（再生成しない）','chk']];
+const FD=[['txt','テロップ','area'],['en','英字（サブ）','text'],['nr','ナレーション文','area'],['d','表示秒','num',.5,30,.1],['fx','カメラ','sel'],['zm','拡大率','rng',1,2.5,.05],['ef','映像エフェクト','sel'],['es','エフェクト強さ','rng',0,1.5,.05],['tr','切替','sel'],['an','文字演出','sel'],['vt','書字方向','sel'],['al','文字そろえ','sel'],['ln','アクセント線','chk'],['pos','文字位置','rng',.08,.95,.01],['sz','文字サイズ','rng',.6,2,.05],['col','文字色','col'],['band','背景帯','chk'],['br','明るさ','rng',.5,1.5,.05],['co','コントラスト','rng',.5,1.5,.05],['sa','彩度','rng',0,2,.05],['fit','全体表示(切らない)','chk'],['vs','動画開始秒','num',0,600,.1],['sp','再生速度','rng',.25,3,.05],['lock','固定（再生成しない）','chk']];
 function rPanel(){const s=S[sel],e=$('#pn2');if(!s){e.innerHTML='<small>上のシーンを選んでください</small>';return}
-e.innerHTML=FD.map(([k,l,ty,a,b,st])=>{let c='';if(ty=='area')c=`<textarea rows="2" data-k="${k}">${s[k]||''}</textarea>`;else if(ty=='num')c=`<input type="number" data-k="${k}" min="${a}" max="${b}" step="${st}" value="${s[k]}">`;else if(ty=='rng')c=`<input type="range" data-k="${k}" min="${a}" max="${b}" step="${st}" value="${s[k]}">`;else if(ty=='text')c=`<input type="text" data-k="${k}" value="${s[k]||''}">`;else if(ty=='col')c=`<input type="color" data-k="${k}" value="${s[k]}">`;else if(ty=='chk')c=`<input type="checkbox" data-k="${k}" ${s[k]?'checked':''}>`;else c=`<select data-k="${k}">${Object.entries(OPT[k]).map(([v,n])=>`<option value="${v}" ${s[k]==v?'selected':''}>${n}</option>`).join('')}</select>`;return`<div class="row"><label>${l}</label>${c}</div>`}).join('')+`<div class="row"><label>素材差替</label><select id="rp">${assets.map(a=>`<option value="${a.id}" ${a.id==s.a?'selected':''}>${a.name}</option>`).join('')}</select></div><div class="row"><button onclick="short1()">短いコピーに変換</button><button onclick="dup()">複製</button><button onclick="applyAll()">演出を全シーンへ</button><button onclick="del()">削除</button></div>`;
+e.innerHTML=FD.map(([k,l,ty,a,b,st])=>{let c='';if(ty=='area')c=`<textarea rows="2" data-k="${k}">${s[k]||''}</textarea>`;else if(ty=='num')c=`<input type="number" data-k="${k}" min="${a}" max="${b}" step="${st}" value="${s[k]}">`;else if(ty=='rng')c=`<input type="range" data-k="${k}" min="${a}" max="${b}" step="${st}" value="${s[k]}">`;else if(ty=='text')c=`<input type="text" data-k="${k}" value="${s[k]||''}">`;else if(ty=='col')c=`<input type="color" data-k="${k}" value="${s[k]}">`;else if(ty=='chk')c=`<input type="checkbox" data-k="${k}" ${s[k]?'checked':''}>`;else c=`<select data-k="${k}">${Object.entries(OPT[k]).map(([v,n])=>`<option value="${v}" ${s[k]==v?'selected':''}>${n}</option>`).join('')}</select>`;return`<div class="row"><label>${l}</label>${c}</div>`}).join('')+`<div class="row"><label>素材差替</label><select id="rp">${assets.map(a=>`<option value="${a.id}" ${a.id==s.a?'selected':''}>${a.name}</option>`).join('')}</select></div><div class="row" style="flex-wrap:wrap"><button onclick="mv(-1)">◀ 前へ</button><button onclick="mv(1)">後ろへ ▶</button><button onclick="short1()">短いコピーに変換</button><button onclick="dup()">複製</button><button onclick="applyAll()">演出を全シーンへ</button><button onclick="del()">削除</button></div>`;
 e.querySelectorAll('[data-k]').forEach(i=>{i.oninput=()=>{const k=i.dataset.k;s[k]=i.type=='checkbox'?i.checked:i.type=='range'||i.type=='number'?+i.value:i.value;if(k=='d'||k=='lock')rStrip();render(t)}});$('#rp').onchange=e=>{s.a=+e.target.value;rStrip();render(t)}}
 const applyG=()=>{const g=$('#gef').value,c=$('#gcm').value;S.forEach(x=>{if(x.lock)return;if(g!='auto')x.ef=g;if(c!='auto')x.fx=c});rPanel();render(t)},applyAll=()=>{const s=S[sel];S.forEach(x=>{if(!x.lock)Object.assign(x,{an:s.an,al:s.al,ln:s.ln,ef:s.ef,es:s.es,tr:s.tr,fx:s.fx})});rStrip();render(t);toast('選択中の演出を全シーンに適用しました')},short1=()=>{S[sel].txt=short(S[sel].txt,14);rPanel();render(t)},dup=()=>{S.splice(sel+1,0,{...S[sel]});sel++;rStrip();rPanel()},del=()=>{S.splice(sel,1);sel=-1;rStrip();rPanel();render(t)};
 /* ---------- render ---------- */
@@ -228,7 +240,7 @@ $('#seek').onpointerdown=()=>ui.s=1;$('#seek').onpointerup=()=>ui.s=0;$('#seek')
 function play(from=0,sa=null){if(!S.length)return;ensure();AC.resume();pause();tStart=AC.currentTime-from;playing=true;stopAt=sa;startAudio(from);$('#pb').textContent='■ 停止';tick()}
 function tick(){if(!playing)return;t=AC.currentTime-tStart;const end=Math.min(stopAt??1e9,total());if(t>=end){t=end;const f=onEnd;pause();render(t);if(f){onEnd=null;f()}return}render(t);raf=requestAnimationFrame(tick)}
 function pause(){playing=false;cancelAnimationFrame(raf);if(AC)stopAudio();assets.forEach(a=>a.v&&a.el.pause());$('#pb').textContent='▶ 再生'}
-function togglePlay(){if(playing)pause();else play(t>=total()-.05?0:t)}
+async function togglePlay(){if(playing){pause();return}ensure();AC.resume();await prepNar();play(t>=total()-.05?0:t)}
 function exportV(){if(!S.length)return toast('シーンがありません');if(!window.MediaRecorder||!cv.captureStream)return toast('このブラウザは書き出しに未対応です。Chrome / Edge の最新版をお使いください');
 ensure();AC.resume();const mt=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));if(!mt)return toast('対応する動画形式がありません');
 const ext=mt.startsWith('video/mp4')?'mp4':'webm',ch=[],st=cv.captureStream(30);dest.stream.getAudioTracks().forEach(x=>st.addTrack(x));
@@ -237,7 +249,7 @@ rec.ondataavailable=e=>e.data.size&&ch.push(e.data);rec.onerror=e=>{toast('書�
 rec.onstop=()=>{fin();if(cancelled){hideOv();return toast('書き出しをキャンセルしました')}const b=new Blob(ch,{type:mt.split(';')[0]}),u=URL.createObjectURL(b),nm=($('#pj').value||'video')+'.'+ext;
 showOv(`<h3 style="margin:0">✓ 動画が完成しました</h3><video controls playsinline src="${u}"></video><div><small>${ext.toUpperCase()}形式・${(b.size/1048576).toFixed(1)}MB${ext=='webm'?'（このブラウザはMP4非対応のためWebMです）':''}</small></div><div style="margin:14px 0"><a class="bt" href="${u}" download="${nm}">動画を保存する</a></div><button onclick="hideOv()">閉じる</button><div style="margin-top:8px"><small>保存先は、お使いのブラウザのダウンロードフォルダです。</small></div>`)};
 function fin(){exp=false;mon.gain.value=1;$('#cx').style.display='none';$('#st').textContent=''}
-mon.gain.value=0;cancelled=false;exp=true;showOv('<h3 style="margin:0">動画を書き出し中… <span id="pp">0%</span></h3><div class="bar"><i id="pbar"></i></div><small>完成まで、このタブを開いたままにしてください。</small><div style="margin-top:12px"><button onclick="cancelExp()">キャンセル</button></div>');rec.start(1000);onEnd=()=>setTimeout(()=>rec.state!='inactive'&&rec.stop(),400);play(0)}
+mon.gain.value=0;cancelled=false;exp=true;showOv('<h3 style="margin:0">動画を書き出し中… <span id="pp">0%</span></h3><div class="bar"><i id="pbar"></i></div><small>完成まで、このタブを開いたままにしてください。</small><div style="margin-top:12px"><button onclick="cancelExp()">キャンセル</button></div>');rec.start(1000);onEnd=()=>setTimeout(()=>rec.state!='inactive'&&rec.stop(),400);prepNar().then(()=>play(0))}
 const showOv=h=>{$('#ovb').innerHTML=h;$('#ov').style.display='flex'},hideOv=()=>{$('#ov').style.display='none';$('#ovb').innerHTML=''};
 function cancelExp(){cancelled=true;onEnd=null;pause();if(rec&&rec.state!='inactive')rec.stop()}
 
@@ -246,13 +258,13 @@ let ready=false,lastSave='',_db;
 const dbp=()=>_db||(_db=new Promise((ok,ng)=>{const r=indexedDB.open('vm',1);r.onupgradeneeded=()=>{r.result.createObjectStore('f');r.result.createObjectStore('m')};r.onsuccess=()=>ok(r.result);r.onerror=()=>ng(r.error)}));
 const dbx=async(st,mode,fn)=>{const d=await dbp();return new Promise((ok,ng)=>{const tx=d.transaction(st,mode),q=fn(tx.objectStore(st));tx.oncomplete=()=>ok(q&&q.result);tx.onerror=tx.onabort=()=>ng(tx.error)})};
 const dbSet=(st,k,v)=>dbx(st,'readwrite',o=>o.put(v,k)).catch(()=>toast('端末への保存に失敗しました（容量不足の可能性）。不要な素材を削除してください')),dbDel=(st,k)=>dbx(st,'readwrite',o=>o.delete(k)).catch(()=>{}),dbGet=(st,k)=>dbx(st,'readonly',o=>o.get(k)).catch(()=>null);
-const FLD=['pj','pn','pc','pe','pf','pt','ps','ar','rs','du','dur','bn','bc','bv','bs','vo','md','gef','gcm'],CHK=['lo','ae'];
+const FLD=['pj','pn','pc','pf','pt','ps','ar','rs','du','dur','bn','bc','bv','bs','vo','md','gef','gcm','nprov','nvoice','nv'],CHK=['lo','ae'];
 const snap=()=>JSON.stringify({S,tpl,uid,ids:assets.map(a=>[a.id,a.use]),F:Object.fromEntries(FLD.map(k=>[k,$('#'+k).value])),C:Object.fromEntries(CHK.map(k=>[k,$('#'+k).checked]))});
 async function autosave(){if(!ready||exp)return;const j=snap();if(j==lastSave)return;lastSave=j;await dbSet('m','state',j)}
 function quota(){try{navigator.storage.estimate().then(q=>{if(q.quota&&q.usage/q.quota>.85)toast('保存容量が残りわずかです。不要な素材を削除してください')})}catch(e){}}
 setInterval(autosave,2500);document.addEventListener('visibilitychange',()=>{if(document.hidden)autosave()});
 async function restore(){try{const j=await dbGet('m','state');if(!j){ready=true;return}const st=JSON.parse(j);
-FLD.forEach(k=>{if(st.F[k]!=null)$('#'+k).value=st.F[k]});CHK.forEach(k=>{if(st.C[k]!=null)$('#'+k).checked=st.C[k]});$('#dur').style.display=$('#du').value=='x'?'':'none';
+if(st.F.nprov){$('#nprov').value=st.F.nprov;nProv()}FLD.forEach(k=>{if(st.F[k]!=null)$('#'+k).value=st.F[k]});CHK.forEach(k=>{if(st.C[k]!=null)$('#'+k).checked=st.C[k]});$('#dur').style.display=$('#du').value=='x'?'':'none';
 const fs=[],rs=[];for(const[id,use]of st.ids){const f=await dbGet('f','a'+id);if(f){fs.push(f);rs.push({id,use})}}
 uid=st.uid||1;if(fs.length)await addFiles(fs,rs);
 if(T[st.tpl])tpl=st.tpl;document.querySelectorAll('#tl button').forEach(b=>b.classList.toggle('on',b.dataset.k==tpl));
@@ -264,7 +276,38 @@ ready=true;lastSave=snap()}
 async function resetAll(){if(!confirm('保存した素材と編集内容をすべて消します。よろしいですか？'))return;ready=false;try{(await dbp()).close()}catch(e){}indexedDB.deleteDatabase('vm').onsuccess=()=>location.reload();setTimeout(()=>location.reload(),1500)}
 function tab(k){document.body.dataset.tab=k;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k==k))}
 function toTop(){window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0}
+/* ---------- 並べ替え（長押しドラッグ）・文字位置ドラッグ ---------- */
+let lastDrag=0,DR=null,cd=null;
+const mv=d=>{const j=sel+d;if(sel<0||j<0||j>=S.length)return;[S[sel],S[j]]=[S[j],S[sel]];sel=j;rStrip();rPanel();t=starts()[sel]+Math.min(1.4,S[sel].d*.6);render(t)};
+function stripDown(e,i,el){if(e.button>0)return;const d={i,el,x0:e.clientX,y0:e.clientY,on:false,id:e.pointerId,to:null};DR=d;if(e.pointerType!='mouse')d.timer=setTimeout(()=>dragBegin(d,d.x0,d.y0),350)}
+function dragBegin(d,x,y){if(DR!==d)return;d.on=true;if(navigator.vibrate)navigator.vibrate(25);const r=d.el.getBoundingClientRect(),g=d.el.cloneNode(true);g.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;z-index:30;opacity:.92;pointer-events:none;transform:scale(1.1);box-shadow:0 8px 24px #000b`;document.body.appendChild(g);d.gh=g;d.ox=x-r.left;d.oy=y-r.top;d.el.style.opacity=.3}
+document.addEventListener('pointermove',e=>{const d=DR;if(!d||e.pointerId!=d.id)return;
+if(!d.on){if(Math.hypot(e.clientX-d.x0,e.clientY-d.y0)>8){if(e.pointerType=='mouse')dragBegin(d,e.clientX,e.clientY);else{clearTimeout(d.timer);DR=null}}return}
+e.preventDefault();d.gh.style.left=(e.clientX-d.ox)+'px';d.gh.style.top=(e.clientY-d.oy)+'px';
+const tg=document.elementsFromPoint(e.clientX,e.clientY).find(n=>n.classList&&n.classList.contains('sc')&&n!==d.el);
+document.querySelectorAll('.sc.over').forEach(n=>n.classList.remove('over'));if(tg){tg.classList.add('over');d.to=+tg.dataset.i}else d.to=null},{passive:false});
+document.addEventListener('touchmove',e=>{if(DR&&DR.on)e.preventDefault()},{passive:false});
+function dragEnd(e,cancel){const d=DR;if(!d||e.pointerId!=d.id)return;DR=null;clearTimeout(d.timer);if(!d.on)return;lastDrag=Date.now();d.gh.remove();d.el.style.opacity='';document.querySelectorAll('.sc.over').forEach(n=>n.classList.remove('over'));
+if(!cancel&&d.to!=null&&d.to!==d.i){const[m]=S.splice(d.i,1);S.splice(d.to,0,m);sel=d.to;t=starts()[sel]+Math.min(1.4,S[sel].d*.6);rStrip();rPanel();render(t);toast('シーンを移動しました')}}
+document.addEventListener('pointerup',e=>dragEnd(e,false));document.addEventListener('pointercancel',e=>dragEnd(e,true));
+cv.addEventListener('pointerdown',e=>{if(playing||!S.length)return;cd={i:at(t)[0],x:e.clientX,y:e.clientY,m:false,id:e.pointerId}});
+cv.addEventListener('pointermove',e=>{if(!cd||e.pointerId!=cd.id)return;if(!cd.m&&Math.hypot(e.clientX-cd.x,e.clientY-cd.y)<6)return;cd.m=true;const r=cv.getBoundingClientRect(),sc=S[cd.i],fx=(e.clientX-r.left)/r.width;if(!sc)return;sc.pos=clamp((e.clientY-r.top)/r.height,.08,.95);sc.al=fx<.33?'l':fx>.67?'r':'c';render(t)});
+const cdEnd=()=>{if(cd&&cd.m){sel=cd.i;rStrip();rPanel()}cd=null};cv.addEventListener('pointerup',cdEnd);cv.addEventListener('pointercancel',cdEnd);
+
+const NR=new Map(),nk=sc=>$('#nprov').value+'|'+$('#nvoice').value+'|'+(sc.nr||'').trim();
+const dec=ab=>new Promise((ok,ng)=>{const p=AC.decodeAudioData(ab,ok,ng);if(p&&p.catch)p.catch(ng)});
+const VO={g:[['ja-JP-Neural2-B','女性（落ち着いた）'],['ja-JP-Neural2-C','男性'],['ja-JP-Neural2-D','男性（低め）']],o:[['nova','女性（明るい）'],['shimmer','女性（柔らかい）'],['onyx','男性（低め）'],['alloy','中性的'],['echo','男性'],['fable','男性（英国風）']]};
+function nProv(){const p=$('#nprov').value;$('#nvoice').innerHTML=(VO[p]||[]).map(([a,b])=>`<option value="${a}">${b}</option>`).join('');try{$('#nkey').value=localStorage.getItem('vm_key_'+p)||''}catch(e){}$('#nkey').disabled=$('#nvoice').disabled=p=='n'}
+$('#nkey').oninput=e=>{const p=$('#nprov').value;if(p!='n')try{localStorage.setItem('vm_key_'+p,e.target.value.trim())}catch(x){}};
+async function tts(text){const p=$('#nprov').value,v=$('#nvoice').value;let k='';try{k=localStorage.getItem('vm_key_'+p)||''}catch(e){}if(!k)throw new Error('APIキーを入力してください');
+if(p=='g'){const r=await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key='+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({input:{text},voice:{languageCode:'ja-JP',name:v},audioConfig:{audioEncoding:'MP3',speakingRate:.95}})});const j=await r.json();if(!r.ok)throw new Error(j.error&&j.error.message||r.status);const bin=atob(j.audioContent),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u.buffer}
+const r=await fetch('https://api.openai.com/v1/audio/speech',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+k},body:JSON.stringify({model:'gpt-4o-mini-tts',voice:v,input:text,instructions:'日本語で、落ち着いた上質なナレーションとして、ゆっくり読み上げてください。'})});if(!r.ok){let m=r.status;try{m=(await r.json()).error.message}catch(e){}throw new Error(m)}return await r.arrayBuffer()}
+async function prepNar(){if($('#nprov').value=='n')return;ensure();for(const sc of S){if(!sc.nr||!sc.nr.trim())continue;const k=nk(sc);if(NR.has(k))continue;const ab=await dbGet('f','n:'+k);if(ab)try{NR.set(k,await dec(ab.slice(0)))}catch(e){}}}
+async function createNar(){const p=$('#nprov').value,st=$('#nst');if(p=='n')return toast('先に「提供元」を選んでください');ensure();const list=S.filter(x=>x.nr&&x.nr.trim());if(!list.length)return toast('ナレーション文がありません。「シーン」タブで入力してください');
+let n=0;for(const sc of list){const k=nk(sc);st.textContent=`作成中 ${n+1}/${list.length}`;if(!NR.has(k)){let ab=await dbGet('f','n:'+k);if(!ab){try{ab=await tts(sc.nr.trim())}catch(e){st.textContent='× 失敗';return toast('音声を作成できませんでした：'+e.message)}dbSet('f','n:'+k,ab)}try{NR.set(k,await dec(ab.slice(0)))}catch(e){st.textContent='× 失敗';return toast('音声を読み込めませんでした')}}
+const b=NR.get(k);if($('#nfit').checked&&b.duration+1>sc.d)sc.d=Math.ceil((b.duration+1)*10)/10;n++}
+st.textContent=`✓ ${n}シーン分を用意しました`;rStrip();render(t);toast('ナレーションを用意しました。再生して確認してください')}
 /* ---------- init ---------- */
 (()=>{const m=window.MediaRecorder?(['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4'].some(x=>MediaRecorder.isTypeSupported(x))?'MP4(H.264/AAC)書き出し対応':'このブラウザはWebM書き出しのみ'):'書き出し非対応ブラウザ';$('#cap').textContent=m})();
-$('#gef').onchange=$('#gcm').onchange=applyG;addEventListener('scroll',()=>{$('#up').style.display=scrollY>500?'block':'none'});window.onerror=m=>toast('エラー：'+m);window.onunhandledrejection=e=>toast('エラー：'+(e.reason&&e.reason.message||e.reason));tab('m');pick('LUXURY');size();render(0);restore();
+$('#gef').onchange=$('#gcm').onchange=applyG;addEventListener('scroll',()=>{$('#up').style.display=scrollY>500?'block':'none'});window.onerror=m=>toast('エラー：'+m);window.onunhandledrejection=e=>toast('エラー：'+(e.reason&&e.reason.message||e.reason));nProv();tab('m');pick('LUXURY');size();render(0);restore();
 </script></body></html>
